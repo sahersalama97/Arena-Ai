@@ -1,0 +1,1891 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "t1",
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "t2",
+      "name": "Weekly Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "15 7 1 * *"
+            }
+          ]
+        }
+      },
+      "id": "t3",
+      "name": "Monthly Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const until=$today.minus({days:1});\nconst since=until.minus({days:6});\nreturn [{json:{reportType:'manual',periodStart:since.toISODate(),periodEnd:until.toISODate(),periodLabel:'Manual test - last 7 days'}}];"
+      },
+      "id": "p1",
+      "name": "Set Manual Period",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const start=$now.minus({weeks:1}).startOf('week');\nconst end=start.plus({days:6});\nreturn [{json:{reportType:'weekly',periodStart:start.toISODate(),periodEnd:end.toISODate(),periodLabel:start.toFormat('MMM d')+' - '+end.toFormat('MMM d, yyyy')}}];"
+      },
+      "id": "p2",
+      "name": "Set Weekly Period",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const start=$now.minus({months:1}).startOf('month');\nconst end=start.endOf('month');\nreturn [{json:{reportType:'monthly',periodStart:start.toISODate(),periodEnd:end.toISODate(),periodLabel:start.toFormat('MMMM yyyy')}}];"
+      },
+      "id": "p3",
+      "name": "Set Monthly Period",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        368
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "sp",
+      "name": "Set Period",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_Meta"
+        },
+        "options": {}
+      },
+      "id": "r1",
+      "name": "Read Daily_Raw_Meta",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        160,
+        -416
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_Meta_Ads"
+        },
+        "options": {}
+      },
+      "id": "r2",
+      "name": "Read Daily_Raw_Meta_Ads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        160,
+        -176
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok"
+        },
+        "options": {}
+      },
+      "id": "r3",
+      "name": "Read Daily_Raw_TikTok",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        160,
+        144
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok_Ads"
+        },
+        "options": {}
+      },
+      "id": "r4",
+      "name": "Read Daily_Raw_TikTok_Ads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        160,
+        384
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizes one Daily_Raw_* tab: clean Date -> ISO, measures -> real numbers,\n// and ABORTS the run instead of letting a later Clear node publish zeros.\n// Set DATE_ORDER to 'dmy' if your raw tab displays 25/9/2026, 'mdy' if it displays 9/25/2026.\nconst SOURCE = 'meta';\nconst TAB = 'Daily_Raw_Meta';\nconst DATE_ORDER = 'auto';\n\nconst MEASURES = ['Spend','Impressions','Reach','Clicks','LPV','Profile_Visits','Follows',\n  'Adds_to_Cart','Initiate_Checkout','Purchases','Purchases_Value'];\n\nfunction toISODate(v) {\n  if (v === null || v === undefined || v === '') return '';\n  if (v instanceof Date) return v.toISOString().slice(0,10);\n  const s = String(v).trim();\n  let m = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);                     // already ISO\n  if (m) return m[1]+'-'+m[2]+'-'+m[3];\n  m = s.match(/^(\\d{1,2})[\\/.](\\d{1,2})[\\/.](\\d{4})$/);            // a/b/yyyy\n  if (m) {\n    const a = +m[1], b = +m[2], y = m[3];\n    let day, mon;\n    if (DATE_ORDER === 'dmy') { day = a; mon = b; }\n    else if (DATE_ORDER === 'mdy') { mon = a; day = b; }\n    else if (a > 12) { day = a; mon = b; }                             // 25/9 -> dmy\n    else if (b > 12) { mon = a; day = b; }                             // 9/25 -> mdy\n    else { day = a; mon = b; }                                        // ambiguous: matches d/m/yyyy export\n    if (mon < 1 || mon > 12 || day < 1 || day > 31) return '';\n    const pad = (n) => String(n).padStart(2,'0');\n    return y+'-'+pad(mon)+'-'+pad(day);\n  }\n  m = s.match(/^(\\d{4})[\\/.](\\d{1,2})[\\/.](\\d{1,2})$/);            // yyyy/m/d\n  if (m) { const pad = (n) => String(n).padStart(2,'0'); return m[1]+'-'+pad(+m[2])+'-'+pad(+m[3]); }\n  const n = Number(s.replace(/[^0-9.]/g,''));                          // Sheets serial number\n  if (Number.isFinite(n) && n > 20000 && n < 80000)\n    return new Date(Date.UTC(1899,11,30) + n*86400000).toISOString().slice(0,10);\n  return '';\n}\n\nfunction num(v) {\n  if (v === null || v === undefined || v === '') return 0;\n  const n = Number(String(v).replace(/[,\\s\\u00a0]/g,'').replace(/[^\\d.\\-]/g,''));\n  return Number.isFinite(n) ? n : 0;\n}\n\nconst out = [];\nlet unparsed = 0;\nfor (const it of items) {\n  const r = it.json || {};\n  if (r.error) throw new Error(`Read of ${TAB} failed upstream: ${r.error.message || JSON.stringify(r.error)}`);\n  const d = toISODate(r.Date);\n  if (!d) { unparsed++; continue; }\n  const row = Object.assign({}, r, { Date: d, DateISO: d, Source: SOURCE });\n  for (const k of MEASURES) if (r[k] !== undefined) row[k] = num(r[k]);\n  out.push({ json: row, pairedItem: it.pairedItem });\n}\nif (!out.length) throw new Error(\n  `${TAB}: no usable rows (read ${items.length} row(s), ${unparsed} with an unparseable Date). ` +\n  `Stopping before any report tab is cleared. If your dates are d/m/yyyy set DATE_ORDER='dmy'.`);\nreturn out;"
+      },
+      "id": "n1",
+      "name": "Normalize Meta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        -416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizes one Daily_Raw_* tab: clean Date -> ISO, measures -> real numbers,\n// and ABORTS the run instead of letting a later Clear node publish zeros.\n// Set DATE_ORDER to 'dmy' if your raw tab displays 25/9/2026, 'mdy' if it displays 9/25/2026.\nconst SOURCE = 'meta_ads';\nconst TAB = 'Daily_Raw_Meta_Ads';\nconst DATE_ORDER = 'auto';\n\nconst MEASURES = ['Spend','Impressions','Reach','Clicks','LPV','Profile_Visits','Follows',\n  'Adds_to_Cart','Initiate_Checkout','Purchases','Purchases_Value'];\n\nfunction toISODate(v) {\n  if (v === null || v === undefined || v === '') return '';\n  if (v instanceof Date) return v.toISOString().slice(0,10);\n  const s = String(v).trim();\n  let m = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);                     // already ISO\n  if (m) return m[1]+'-'+m[2]+'-'+m[3];\n  m = s.match(/^(\\d{1,2})[\\/.](\\d{1,2})[\\/.](\\d{4})$/);            // a/b/yyyy\n  if (m) {\n    const a = +m[1], b = +m[2], y = m[3];\n    let day, mon;\n    if (DATE_ORDER === 'dmy') { day = a; mon = b; }\n    else if (DATE_ORDER === 'mdy') { mon = a; day = b; }\n    else if (a > 12) { day = a; mon = b; }                             // 25/9 -> dmy\n    else if (b > 12) { mon = a; day = b; }                             // 9/25 -> mdy\n    else { day = a; mon = b; }                                        // ambiguous: matches d/m/yyyy export\n    if (mon < 1 || mon > 12 || day < 1 || day > 31) return '';\n    const pad = (n) => String(n).padStart(2,'0');\n    return y+'-'+pad(mon)+'-'+pad(day);\n  }\n  m = s.match(/^(\\d{4})[\\/.](\\d{1,2})[\\/.](\\d{1,2})$/);            // yyyy/m/d\n  if (m) { const pad = (n) => String(n).padStart(2,'0'); return m[1]+'-'+pad(+m[2])+'-'+pad(+m[3]); }\n  const n = Number(s.replace(/[^0-9.]/g,''));                          // Sheets serial number\n  if (Number.isFinite(n) && n > 20000 && n < 80000)\n    return new Date(Date.UTC(1899,11,30) + n*86400000).toISOString().slice(0,10);\n  return '';\n}\n\nfunction num(v) {\n  if (v === null || v === undefined || v === '') return 0;\n  const n = Number(String(v).replace(/[,\\s\\u00a0]/g,'').replace(/[^\\d.\\-]/g,''));\n  return Number.isFinite(n) ? n : 0;\n}\n\nconst out = [];\nlet unparsed = 0;\nfor (const it of items) {\n  const r = it.json || {};\n  if (r.error) throw new Error(`Read of ${TAB} failed upstream: ${r.error.message || JSON.stringify(r.error)}`);\n  const d = toISODate(r.Date);\n  if (!d) { unparsed++; continue; }\n  const row = Object.assign({}, r, { Date: d, DateISO: d, Source: SOURCE });\n  for (const k of MEASURES) if (r[k] !== undefined) row[k] = num(r[k]);\n  out.push({ json: row, pairedItem: it.pairedItem });\n}\nif (!out.length) throw new Error(\n  `${TAB}: no usable rows (read ${items.length} row(s), ${unparsed} with an unparseable Date). ` +\n  `Stopping before any report tab is cleared. If your dates are d/m/yyyy set DATE_ORDER='dmy'.`);\nreturn out;"
+      },
+      "id": "n2",
+      "name": "Normalize Meta Ads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizes one Daily_Raw_* tab: clean Date -> ISO, measures -> real numbers,\n// and ABORTS the run instead of letting a later Clear node publish zeros.\n// Set DATE_ORDER to 'dmy' if your raw tab displays 25/9/2026, 'mdy' if it displays 9/25/2026.\nconst SOURCE = 'tiktok';\nconst TAB = 'Daily_Raw_TikTok';\nconst DATE_ORDER = 'auto';\n\nconst MEASURES = ['Spend','Impressions','Reach','Clicks','LPV','Profile_Visits','Follows',\n  'Adds_to_Cart','Initiate_Checkout','Purchases','Purchases_Value'];\n\nfunction toISODate(v) {\n  if (v === null || v === undefined || v === '') return '';\n  if (v instanceof Date) return v.toISOString().slice(0,10);\n  const s = String(v).trim();\n  let m = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);                     // already ISO\n  if (m) return m[1]+'-'+m[2]+'-'+m[3];\n  m = s.match(/^(\\d{1,2})[\\/.](\\d{1,2})[\\/.](\\d{4})$/);            // a/b/yyyy\n  if (m) {\n    const a = +m[1], b = +m[2], y = m[3];\n    let day, mon;\n    if (DATE_ORDER === 'dmy') { day = a; mon = b; }\n    else if (DATE_ORDER === 'mdy') { mon = a; day = b; }\n    else if (a > 12) { day = a; mon = b; }                             // 25/9 -> dmy\n    else if (b > 12) { mon = a; day = b; }                             // 9/25 -> mdy\n    else { day = a; mon = b; }                                        // ambiguous: matches d/m/yyyy export\n    if (mon < 1 || mon > 12 || day < 1 || day > 31) return '';\n    const pad = (n) => String(n).padStart(2,'0');\n    return y+'-'+pad(mon)+'-'+pad(day);\n  }\n  m = s.match(/^(\\d{4})[\\/.](\\d{1,2})[\\/.](\\d{1,2})$/);            // yyyy/m/d\n  if (m) { const pad = (n) => String(n).padStart(2,'0'); return m[1]+'-'+pad(+m[2])+'-'+pad(+m[3]); }\n  const n = Number(s.replace(/[^0-9.]/g,''));                          // Sheets serial number\n  if (Number.isFinite(n) && n > 20000 && n < 80000)\n    return new Date(Date.UTC(1899,11,30) + n*86400000).toISOString().slice(0,10);\n  return '';\n}\n\nfunction num(v) {\n  if (v === null || v === undefined || v === '') return 0;\n  const n = Number(String(v).replace(/[,\\s\\u00a0]/g,'').replace(/[^\\d.\\-]/g,''));\n  return Number.isFinite(n) ? n : 0;\n}\n\nconst out = [];\nlet unparsed = 0;\nfor (const it of items) {\n  const r = it.json || {};\n  if (r.error) throw new Error(`Read of ${TAB} failed upstream: ${r.error.message || JSON.stringify(r.error)}`);\n  const d = toISODate(r.Date);\n  if (!d) { unparsed++; continue; }\n  const row = Object.assign({}, r, { Date: d, DateISO: d, Source: SOURCE });\n  for (const k of MEASURES) if (r[k] !== undefined) row[k] = num(r[k]);\n  out.push({ json: row, pairedItem: it.pairedItem });\n}\nif (!out.length) throw new Error(\n  `${TAB}: no usable rows (read ${items.length} row(s), ${unparsed} with an unparseable Date). ` +\n  `Stopping before any report tab is cleared. If your dates are d/m/yyyy set DATE_ORDER='dmy'.`);\nreturn out;"
+      },
+      "id": "n3",
+      "name": "Normalize TikTok",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalizes one Daily_Raw_* tab: clean Date -> ISO, measures -> real numbers,\n// and ABORTS the run instead of letting a later Clear node publish zeros.\n// Set DATE_ORDER to 'dmy' if your raw tab displays 25/9/2026, 'mdy' if it displays 9/25/2026.\nconst SOURCE = 'tiktok_ads';\nconst TAB = 'Daily_Raw_TikTok_Ads';\nconst DATE_ORDER = 'auto';\n\nconst MEASURES = ['Spend','Impressions','Reach','Clicks','LPV','Profile_Visits','Follows',\n  'Adds_to_Cart','Initiate_Checkout','Purchases','Purchases_Value'];\n\nfunction toISODate(v) {\n  if (v === null || v === undefined || v === '') return '';\n  if (v instanceof Date) return v.toISOString().slice(0,10);\n  const s = String(v).trim();\n  let m = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);                     // already ISO\n  if (m) return m[1]+'-'+m[2]+'-'+m[3];\n  m = s.match(/^(\\d{1,2})[\\/.](\\d{1,2})[\\/.](\\d{4})$/);            // a/b/yyyy\n  if (m) {\n    const a = +m[1], b = +m[2], y = m[3];\n    let day, mon;\n    if (DATE_ORDER === 'dmy') { day = a; mon = b; }\n    else if (DATE_ORDER === 'mdy') { mon = a; day = b; }\n    else if (a > 12) { day = a; mon = b; }                             // 25/9 -> dmy\n    else if (b > 12) { mon = a; day = b; }                             // 9/25 -> mdy\n    else { day = a; mon = b; }                                        // ambiguous: matches d/m/yyyy export\n    if (mon < 1 || mon > 12 || day < 1 || day > 31) return '';\n    const pad = (n) => String(n).padStart(2,'0');\n    return y+'-'+pad(mon)+'-'+pad(day);\n  }\n  m = s.match(/^(\\d{4})[\\/.](\\d{1,2})[\\/.](\\d{1,2})$/);            // yyyy/m/d\n  if (m) { const pad = (n) => String(n).padStart(2,'0'); return m[1]+'-'+pad(+m[2])+'-'+pad(+m[3]); }\n  const n = Number(s.replace(/[^0-9.]/g,''));                          // Sheets serial number\n  if (Number.isFinite(n) && n > 20000 && n < 80000)\n    return new Date(Date.UTC(1899,11,30) + n*86400000).toISOString().slice(0,10);\n  return '';\n}\n\nfunction num(v) {\n  if (v === null || v === undefined || v === '') return 0;\n  const n = Number(String(v).replace(/[,\\s\\u00a0]/g,'').replace(/[^\\d.\\-]/g,''));\n  return Number.isFinite(n) ? n : 0;\n}\n\nconst out = [];\nlet unparsed = 0;\nfor (const it of items) {\n  const r = it.json || {};\n  if (r.error) throw new Error(`Read of ${TAB} failed upstream: ${r.error.message || JSON.stringify(r.error)}`);\n  const d = toISODate(r.Date);\n  if (!d) { unparsed++; continue; }\n  const row = Object.assign({}, r, { Date: d, DateISO: d, Source: SOURCE });\n  for (const k of MEASURES) if (r[k] !== undefined) row[k] = num(r[k]);\n  out.push({ json: row, pairedItem: it.pairedItem });\n}\nif (!out.length) throw new Error(\n  `${TAB}: no usable rows (read ${items.length} row(s), ${unparsed} with an unparseable Date). ` +\n  `Stopping before any report tab is cleared. If your dates are d/m/yyyy set DATE_ORDER='dmy'.`);\nreturn out;"
+      },
+      "id": "n4",
+      "name": "Normalize TikTok Ads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 2,
+        "options": {
+          "additionalOptions": {
+            "alternateInputs": false
+          }
+        }
+      },
+      "id": "mg0",
+      "name": "Join Overview Reads",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        336,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function num(v){if(v==null||v==='')return 0;const n=Number(String(v).replace(/[,\\s]/g,'').replace(/[^\\d.\\-]/g,''));return Number.isFinite(n)?n:0;}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nconst period=$('Set Period').first().json;\nconst rows=items.map(i=>i.json).filter(r=>r.DateISO>=period.periodStart&&r.DateISO<=period.periodEnd);\nif(!rows.length) throw new Error('Meta Overview: 0 raw rows inside '+period.periodStart+'..'+period.periodEnd+' - aborting rather than clearing the report with zeros');\nlet spend=0,impressions=0,reach=0,atc=0,ic=0,purchases=0,purchasesValue=0,clicks=0;\nfor(const r of rows){spend+=num(r.Spend);impressions+=num(r.Impressions);reach+=num(r.Reach);atc+=num(r.Adds_to_Cart);ic+=num(r.Initiate_Checkout);purchases+=num(r.Purchases);purchasesValue+=num(r.Purchases_Value);clicks+=num(r.Clicks);}\nconst cpm=impressions?(spend/impressions)*1000:0;\nconst frequency=reach?impressions/reach:0;\nconst ctr=impressions?(clicks/impressions)*100:0;\nconst roas=spend?purchasesValue/spend:0;\nconst aov=purchases?purchasesValue/purchases:0;\nconst cvr=clicks?(purchases/clicks)*100:0;\nconst out=[\n {'Metric':'Spend','Value':round(spend,2)},\n {'Metric':'CPM','Value':round(cpm,2)},\n {'Metric':'Outbound CTR %','Value':round(ctr,4)},\n {'Metric':'Impressions','Value':impressions},\n {'Metric':'Reach','Value':reach},\n {'Metric':'Frequency','Value':round(frequency,2)},\n {'Metric':'Adds to Cart','Value':atc},\n {'Metric':'Initiate Checkout','Value':ic},\n {'Metric':'Purchases','Value':purchases},\n {'Metric':'Purchases Value','Value':round(purchasesValue,2)},\n {'Metric':'ROAS','Value':round(roas,4)},\n {'Metric':'AOV','Value':round(aov,2)},\n {'Metric':'Purchase CVR %','Value':round(cvr,4)},\n];\nreturn [{ json: { rows: out } }];"
+      },
+      "id": "a1",
+      "name": "Meta Overview Aggregator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -496
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function num(v){if(v==null||v==='')return 0;const n=Number(String(v).replace(/[,\\s]/g,'').replace(/[^\\d.\\-]/g,''));return Number.isFinite(n)?n:0;}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nconst period=$('Set Period').first().json;\nconst rows=items.map(i=>i.json).filter(r=>r.DateISO>=period.periodStart&&r.DateISO<=period.periodEnd);\nif(!rows.length) throw new Error('Meta Weekly: 0 raw rows inside '+period.periodStart+'..'+period.periodEnd+' - aborting rather than clearing the report with zeros');\nconst weeks={};\nfor(const r of rows){\n const ws=DateTime.fromISO(r.DateISO).startOf('week');\n const key=ws.toISODate();\n if(!weeks[key])weeks[key]={start:ws,end:ws.plus({days:6}),spend:0,impressions:0,purchases:0,purchasesValue:0};\n const w=weeks[key];\n w.spend+=num(r.Spend); w.impressions+=num(r.Impressions); w.purchases+=num(r.Purchases); w.purchasesValue+=num(r.Purchases_Value);\n}\nlet list=Object.values(weeks).map(w=>({\n Week:w.start.toFormat('MMM d')+'-'+w.end.toFormat('d'),\n Period_Start:w.start.toISODate(), Period_End:w.end.toISODate(),\n Spend:round(w.spend,2), CPM:round(w.impressions?(w.spend/w.impressions)*1000:0,2),\n Purchases:w.purchases, Purchases_Value:round(w.purchasesValue,2),\n ROAS: w.spend? round(w.purchasesValue/w.spend,4) : ''\n}));\n// FIX-6: chronological order for a time series; ROAS ranking kept separately.\nlist.sort((a,b)=>a.Period_Start<b.Period_Start?-1:1);\nconst byRoas=[...list].sort((a,b)=>(b.ROAS===''?-1:b.ROAS)-(a.ROAS===''?-1:a.ROAS));\nconst roasRank=new Map(byRoas.map((r,i)=>[r.Period_Start,i+1]));\nconst ranked = list.map((r, idx) => ({ Rank: idx + 1, ROAS_Rank: roasRank.get(r.Period_Start), ...r }));\nreturn [{ json: { rows: ranked } }];"
+      },
+      "id": "a2",
+      "name": "Meta Weekly Aggregator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function num(v){if(v==null||v==='')return 0;const n=Number(String(v).replace(/[,\\s]/g,'').replace(/[^\\d.\\-]/g,''));return Number.isFinite(n)?n:0;}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nconst period=$('Set Period').first().json;\nconst rows=items.map(i=>i.json).filter(r=>r.DateISO>=period.periodStart&&r.DateISO<=period.periodEnd);\nif(!rows.length) throw new Error('Meta Ad Performance: 0 raw rows inside '+period.periodStart+'..'+period.periodEnd+' - aborting rather than clearing the report with zeros');\nconst groups={};\nfor(const r of rows){\n const key=r.Ad_ID||r.Ad_Name;\n if(!groups[key])groups[key]={Ad_ID:r.Ad_ID,Ad_Name:r.Ad_Name,AdSet_Name:r.AdSet_Name,Campaign_Name:r.Campaign_Name,Creative_Key:r.Creative_Key,spend:0,impressions:0,reach:0,clicks:0,lpv:0,atc:0,ic:0,purchases:0,purchasesValue:0};\n const g=groups[key];\n g.spend+=num(r.Spend); g.impressions+=num(r.Impressions); g.reach+=num(r.Reach); g.clicks+=num(r.Clicks); g.lpv+=num(r.LPV); g.atc+=num(r.Adds_to_Cart); g.ic+=num(r.Initiate_Checkout); g.purchases+=num(r.Purchases); g.purchasesValue+=num(r.Purchases_Value);\n}\nlet list=Object.values(groups).map(g=>({\n Ad_ID:g.Ad_ID, Ad_Name:g.Ad_Name, AdSet_Name:g.AdSet_Name, Campaign_Name:g.Campaign_Name, Creative_Key:g.Creative_Key,\n Spend:round(g.spend,2), Impressions:g.impressions, Reach:g.reach,\n Frequency:round(g.reach?g.impressions/g.reach:0,2), CPM:round(g.impressions?(g.spend/g.impressions)*1000:0,2),\n Clicks:g.clicks, CTR_Pct:round(g.impressions?(g.clicks/g.impressions)*100:0,4),\n LPV:g.lpv, Adds_to_Cart:g.atc, Initiate_Checkout:g.ic, Purchases:g.purchases,\n Purchases_Value:round(g.purchasesValue,2), ROAS:round(g.spend?g.purchasesValue/g.spend:0,4),\n AOV:round(g.purchases?g.purchasesValue/g.purchases:0,2), Purchase_CVR_Pct:round(g.clicks?(g.purchases/g.clicks)*100:0,4)\n}));\nlist.sort((a,b)=>b.Spend-a.Spend);\nconst ranked = list.map((r, idx) => ({ Rank: idx + 1, ...r }));\nreturn [{ json: { rows: ranked } }];"
+      },
+      "id": "a3",
+      "name": "Meta Ad Performance Aggregator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function num(v){if(v==null||v==='')return 0;const n=Number(String(v).replace(/[,\\s]/g,'').replace(/[^\\d.\\-]/g,''));return Number.isFinite(n)?n:0;}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nconst period=$('Set Period').first().json;\nconst rows=items.map(i=>i.json).filter(r=>r.DateISO>=period.periodStart&&r.DateISO<=period.periodEnd);\nif(!rows.length) throw new Error('Meta Creative Rollup: 0 raw rows inside '+period.periodStart+'..'+period.periodEnd+' - aborting rather than clearing the report with zeros');\nconst groups={};\nfor(const r of rows){\n const key=r.Creative_Key||'(unknown)';\n if(!groups[key])groups[key]={Creative_Key:key,adIds:new Set(),spend:0,impressions:0,clicks:0,lpv:0,atc:0,ic:0,purchases:0,purchasesValue:0};\n const g=groups[key];\n g.adIds.add(r.Ad_ID);\n g.spend+=num(r.Spend); g.impressions+=num(r.Impressions); g.clicks+=num(r.Clicks); g.lpv+=num(r.LPV); g.atc+=num(r.Adds_to_Cart); g.ic+=num(r.Initiate_Checkout); g.purchases+=num(r.Purchases); g.purchasesValue+=num(r.Purchases_Value);\n}\nlet list=Object.values(groups).map(g=>({\n Creative_Key:g.Creative_Key, Instances:g.adIds.size,\n Spend:round(g.spend,2), Impressions:g.impressions,\n CPM:round(g.impressions?(g.spend/g.impressions)*1000:0,2),\n Clicks:g.clicks, CTR_Pct:round(g.impressions?(g.clicks/g.impressions)*100:0,4),\n LPV:g.lpv, Adds_to_Cart:g.atc, Initiate_Checkout:g.ic, Purchases:g.purchases,\n Purchases_Value:round(g.purchasesValue,2), ROAS:round(g.spend?g.purchasesValue/g.spend:0,4),\n AOV:round(g.purchases?g.purchasesValue/g.purchases:0,2), Purchase_CVR_Pct:round(g.clicks?(g.purchases/g.clicks)*100:0,4)\n}));\nlist.sort((a,b)=>b.Spend-a.Spend);\nconst ranked = list.map((r, idx) => ({ Rank: idx + 1, ...r }));\nreturn [{ json: { rows: ranked } }];"
+      },
+      "id": "a4",
+      "name": "Meta Creative Rollup Aggregator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function num(v){if(v==null||v==='')return 0;const n=Number(String(v).replace(/[,\\s]/g,'').replace(/[^\\d.\\-]/g,''));return Number.isFinite(n)?n:0;}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nconst period=$('Set Period').first().json;\nconst rows=items.map(i=>i.json).filter(r=>r.DateISO>=period.periodStart&&r.DateISO<=period.periodEnd);\nif(!rows.length) throw new Error('TikTok Overview: 0 raw rows inside '+period.periodStart+'..'+period.periodEnd+' - aborting rather than clearing the report with zeros');\nlet spend=0,impressions=0,reach=0,atc=0,ic=0,purchases=0,purchasesValue=0,clicks=0,profileVisits=0,follows=0;\nfor(const r of rows){spend+=num(r.Spend);impressions+=num(r.Impressions);reach+=num(r.Reach);atc+=num(r.Adds_to_Cart);ic+=num(r.Initiate_Checkout);purchases+=num(r.Purchases);purchasesValue+=num(r.Purchases_Value);clicks+=num(r.Clicks);profileVisits+=num(r.Profile_Visits);follows+=num(r.Follows);}\nconst cpm=impressions?(spend/impressions)*1000:0;\nconst ctr=impressions?(clicks/impressions)*100:0;\nconst roas=spend?purchasesValue/spend:0;\nconst aov=purchases?purchasesValue/purchases:0;\nconst cvr=clicks?(purchases/clicks)*100:0;\nconst out=[\n {'Metric':'Spend','Value':round(spend,2)},\n {'Metric':'CPM','Value':round(cpm,2)},\n {'Metric':'CTR %','Value':round(ctr,4)},\n {'Metric':'Impressions','Value':impressions},\n {'Metric':'Reach','Value':reach},\n {'Metric':'Adds to Cart','Value':atc},\n {'Metric':'Initiate Checkout','Value':ic},\n {'Metric':'Purchases','Value':purchases},\n {'Metric':'Purchases Value','Value':round(purchasesValue,2)},\n {'Metric':'ROAS','Value':round(roas,4)},\n {'Metric':'AOV','Value':round(aov,2)},\n {'Metric':'Purchase CVR %','Value':round(cvr,4)},\n {'Metric':'Paid Profile Visits','Value':profileVisits},\n {'Metric':'Paid Follows','Value':follows},\n];\nreturn [{ json: { rows: out } }];"
+      },
+      "id": "a5",
+      "name": "TikTok Overview Aggregator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function num(v){if(v==null||v==='')return 0;const n=Number(String(v).replace(/[,\\s]/g,'').replace(/[^\\d.\\-]/g,''));return Number.isFinite(n)?n:0;}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nconst period=$('Set Period').first().json;\nconst rows=items.map(i=>i.json).filter(r=>r.DateISO>=period.periodStart&&r.DateISO<=period.periodEnd);\nif(!rows.length) throw new Error('TikTok Weekly: 0 raw rows inside '+period.periodStart+'..'+period.periodEnd+' - aborting rather than clearing the report with zeros');\nconst weeks={};\nfor(const r of rows){\n const ws=DateTime.fromISO(r.DateISO).startOf('week');\n const key=ws.toISODate();\n if(!weeks[key])weeks[key]={start:ws,end:ws.plus({days:6}),spend:0,impressions:0,purchases:0,purchasesValue:0};\n const w=weeks[key];\n w.spend+=num(r.Spend); w.impressions+=num(r.Impressions); w.purchases+=num(r.Purchases); w.purchasesValue+=num(r.Purchases_Value);\n}\nlet list=Object.values(weeks).map(w=>({\n Week:w.start.toFormat('MMM d')+'-'+w.end.toFormat('d'),\n Period_Start:w.start.toISODate(), Period_End:w.end.toISODate(),\n Spend:round(w.spend,2), CPM:round(w.impressions?(w.spend/w.impressions)*1000:0,2),\n Purchases:w.purchases, Purchases_Value:round(w.purchasesValue,2),\n ROAS: w.spend? round(w.purchasesValue/w.spend,4) : ''\n}));\n// FIX-6: chronological order for a time series; ROAS ranking kept separately.\nlist.sort((a,b)=>a.Period_Start<b.Period_Start?-1:1);\nconst byRoas=[...list].sort((a,b)=>(b.ROAS===''?-1:b.ROAS)-(a.ROAS===''?-1:a.ROAS));\nconst roasRank=new Map(byRoas.map((r,i)=>[r.Period_Start,i+1]));\nconst ranked = list.map((r, idx) => ({ Rank: idx + 1, ROAS_Rank: roasRank.get(r.Period_Start), ...r }));\nreturn [{ json: { rows: ranked } }];"
+      },
+      "id": "a6",
+      "name": "TikTok Weekly Aggregator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function num(v){if(v==null||v==='')return 0;const n=Number(String(v).replace(/[,\\s]/g,'').replace(/[^\\d.\\-]/g,''));return Number.isFinite(n)?n:0;}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nconst period=$('Set Period').first().json;\nconst rows=items.map(i=>i.json).filter(r=>r.DateISO>=period.periodStart&&r.DateISO<=period.periodEnd);\nif(!rows.length) throw new Error('TikTok Ad Performance: 0 raw rows inside '+period.periodStart+'..'+period.periodEnd+' - aborting rather than clearing the report with zeros');\nconst groups={};\nfor(const r of rows){\n const key=r.Ad_ID||r.Ad_Name;\n if(!groups[key])groups[key]={Ad_ID:r.Ad_ID,Ad_Name:r.Ad_Name,Campaign_Name:r.Campaign_Name,AdGroup_Name:r.AdGroup_Name,Creative_Key:r.Creative_Key,spend:0,impressions:0,reach:0,clicks:0,profileVisits:0,follows:0,atc:0,ic:0,purchases:0,purchasesValue:0};\n const g=groups[key];\n g.spend+=num(r.Spend); g.impressions+=num(r.Impressions); g.reach+=num(r.Reach); g.clicks+=num(r.Clicks); g.profileVisits+=num(r.Profile_Visits); g.follows+=num(r.Follows); g.atc+=num(r.Adds_to_Cart); g.ic+=num(r.Initiate_Checkout); g.purchases+=num(r.Purchases); g.purchasesValue+=num(r.Purchases_Value);\n}\nlet list=Object.values(groups).map(g=>({\n Ad_ID:g.Ad_ID, Ad_Name:g.Ad_Name, Campaign_Name:g.Campaign_Name, AdGroup_Name:g.AdGroup_Name, Creative_Key:g.Creative_Key,\n Spend:round(g.spend,2), Impressions:g.impressions, Reach:g.reach,\n CPM:round(g.impressions?(g.spend/g.impressions)*1000:0,2),\n Clicks:g.clicks, CTR_Pct:round(g.impressions?(g.clicks/g.impressions)*100:0,4),\n Profile_Visits:g.profileVisits, Follows:g.follows,\n Adds_to_Cart:g.atc, Initiate_Checkout:g.ic, Purchases:g.purchases,\n Purchases_Value:round(g.purchasesValue,2), ROAS:round(g.spend?g.purchasesValue/g.spend:0,4),\n AOV:round(g.purchases?g.purchasesValue/g.purchases:0,2), Purchase_CVR_Pct:round(g.clicks?(g.purchases/g.clicks)*100:0,4)\n}));\nlist.sort((a,b)=>b.Spend-a.Spend);\nconst ranked = list.map((r, idx) => ({ Rank: idx + 1, ...r }));\nreturn [{ json: { rows: ranked } }];"
+      },
+      "id": "a7",
+      "name": "TikTok Ad Performance Aggregator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function num(v){if(v==null||v==='')return 0;const n=Number(String(v).replace(/[,\\s]/g,'').replace(/[^\\d.\\-]/g,''));return Number.isFinite(n)?n:0;}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nconst period=$('Set Period').first().json;\nconst rows=items.map(i=>i.json).filter(r=>r.DateISO>=period.periodStart&&r.DateISO<=period.periodEnd);\nif(!rows.length) throw new Error('TikTok Creative Rollup: 0 raw rows inside '+period.periodStart+'..'+period.periodEnd+' - aborting rather than clearing the report with zeros');\nconst groups={};\nfor(const r of rows){\n const key=r.Creative_Key||'(unknown)';\n if(!groups[key])groups[key]={Creative_Key:key,adIds:new Set(),spend:0,impressions:0,clicks:0,profileVisits:0,follows:0,atc:0,ic:0,purchases:0,purchasesValue:0};\n const g=groups[key];\n g.adIds.add(r.Ad_ID);\n g.spend+=num(r.Spend); g.impressions+=num(r.Impressions); g.clicks+=num(r.Clicks); g.profileVisits+=num(r.Profile_Visits); g.follows+=num(r.Follows); g.atc+=num(r.Adds_to_Cart); g.ic+=num(r.Initiate_Checkout); g.purchases+=num(r.Purchases); g.purchasesValue+=num(r.Purchases_Value);\n}\nlet list=Object.values(groups).map(g=>({\n Creative_Key:g.Creative_Key, Instances:g.adIds.size,\n Spend:round(g.spend,2), Impressions:g.impressions,\n CPM:round(g.impressions?(g.spend/g.impressions)*1000:0,2),\n Clicks:g.clicks, CTR_Pct:round(g.impressions?(g.clicks/g.impressions)*100:0,4),\n Profile_Visits:g.profileVisits, Follows:g.follows,\n Adds_to_Cart:g.atc, Initiate_Checkout:g.ic, Purchases:g.purchases,\n Purchases_Value:round(g.purchasesValue,2), ROAS:round(g.spend?g.purchasesValue/g.spend:0,4),\n AOV:round(g.purchases?g.purchasesValue/g.purchases:0,2), Purchase_CVR_Pct:round(g.clicks?(g.purchases/g.clicks)*100:0,4)\n}));\nlist.sort((a,b)=>b.Spend-a.Spend);\nconst ranked = list.map((r, idx) => ({ Rank: idx + 1, ...r }));\nreturn [{ json: { rows: ranked } }];"
+      },
+      "id": "a8",
+      "name": "TikTok Creative Rollup Aggregator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function num(v){if(v==null||v==='')return 0;const n=Number(String(v).replace(/[,\\s]/g,'').replace(/[^\\d.\\-]/g,''));return Number.isFinite(n)?n:0;}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nconst period=$('Set Period').first().json;\nconst rows=items.map(i=>i.json).filter(r=>r.DateISO>=period.periodStart&&r.DateISO<=period.periodEnd);\nif(!rows.length) throw new Error('Combined: 0 raw rows inside '+period.periodStart+'..'+period.periodEnd+' - aborting rather than clearing the report with zeros');\nfunction totals(src){\n let spend=0,purchases=0,purchasesValue=0;\n for(const r of rows){ if(r.Source!==src) continue;\n  spend+=num(r.Spend); purchases+=num(r.Purchases); purchasesValue+=num(r.Purchases_Value); }\n return {spend,purchases,purchasesValue,roas:spend?purchasesValue/spend:0,aov:purchases?purchasesValue/purchases:0};\n}\nconst m=totals('meta'), t=totals('tiktok');\nconst combinedSpend=m.spend+t.spend, combinedPurchases=m.purchases+t.purchases, combinedValue=m.purchasesValue+t.purchasesValue;\nconst combinedRoas=combinedSpend?combinedValue/combinedSpend:0;\nconst combinedAov=combinedPurchases?combinedValue/combinedPurchases:0;\nconst out=[\n {'Metric':'Spend','Meta':round(m.spend,2),'TikTok':round(t.spend,2),'Combined':round(combinedSpend,2)},\n {'Metric':'Purchases','Meta':m.purchases,'TikTok':t.purchases,'Combined':combinedPurchases},\n {'Metric':'Purchases Value','Meta':round(m.purchasesValue,2),'TikTok':round(t.purchasesValue,2),'Combined':round(combinedValue,2)},\n {'Metric':'ROAS','Meta':round(m.roas,4),'TikTok':round(t.roas,4),'Combined':round(combinedRoas,4)},\n {'Metric':'AOV','Meta':round(m.aov,2),'TikTok':round(t.aov,2),'Combined':round(combinedAov,2)},\n {'Metric':'Meta Share of Spend %','Meta':round(combinedSpend?(m.spend/combinedSpend)*100:0,2),'TikTok':'','Combined':''},\n {'Metric':'TikTok Share of Spend %','Meta':'','TikTok':round(combinedSpend?(t.spend/combinedSpend)*100:0,2),'Combined':''},\n];\nreturn [{ json: { rows: out } }];"
+      },
+      "id": "a9",
+      "name": "Combined Aggregator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_Meta_Overview"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": false
+      },
+      "id": "c1",
+      "name": "Clear Report_Meta_Overview",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1140,
+        -496
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = (items[0] && items[0].json && items[0].json.rows) || [];\nif (!rows.length) throw new Error('Expand Report_Meta_Overview: received no rows - refusing to write an empty tab after the clear');\nreturn rows.map((r) => ({ json: r && r.json ? r.json : r }));"
+      },
+      "id": "e1",
+      "name": "Expand Report_Meta_Overview Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        -496
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_Meta_Overview"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "w1",
+      "name": "Write Report_Meta_Overview",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1620,
+        -496
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_Meta_Weekly"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": false
+      },
+      "id": "c2",
+      "name": "Clear Report_Meta_Weekly",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1140,
+        -336
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = (items[0] && items[0].json && items[0].json.rows) || [];\nif (!rows.length) throw new Error('Expand Report_Meta_Weekly: received no rows - refusing to write an empty tab after the clear');\nreturn rows.map((r) => ({ json: r && r.json ? r.json : r }));"
+      },
+      "id": "e2",
+      "name": "Expand Report_Meta_Weekly Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        -336
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_Meta_Weekly"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "w2",
+      "name": "Write Report_Meta_Weekly",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1620,
+        -336
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_Meta_Ad_Performance"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": false
+      },
+      "id": "c3",
+      "name": "Clear Report_Meta_Ad_Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1140,
+        -176
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = (items[0] && items[0].json && items[0].json.rows) || [];\nif (!rows.length) throw new Error('Expand Report_Meta_Ad_Performance: received no rows - refusing to write an empty tab after the clear');\nreturn rows.map((r) => ({ json: r && r.json ? r.json : r }));"
+      },
+      "id": "e3",
+      "name": "Expand Report_Meta_Ad_Performance Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_Meta_Ad_Performance"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "w3",
+      "name": "Write Report_Meta_Ad_Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1620,
+        -176
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_Meta_Creative_Rollup"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": false
+      },
+      "id": "c4",
+      "name": "Clear Report_Meta_Creative_Rollup",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1140,
+        -16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = (items[0] && items[0].json && items[0].json.rows) || [];\nif (!rows.length) throw new Error('Expand Report_Meta_Creative_Rollup: received no rows - refusing to write an empty tab after the clear');\nreturn rows.map((r) => ({ json: r && r.json ? r.json : r }));"
+      },
+      "id": "e4",
+      "name": "Expand Report_Meta_Creative_Rollup Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_Meta_Creative_Rollup"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "w4",
+      "name": "Write Report_Meta_Creative_Rollup",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1620,
+        -16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_TikTok_Overview"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": false
+      },
+      "id": "c5",
+      "name": "Clear Report_TikTok_Overview",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1140,
+        96
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = (items[0] && items[0].json && items[0].json.rows) || [];\nif (!rows.length) throw new Error('Expand Report_TikTok_Overview: received no rows - refusing to write an empty tab after the clear');\nreturn rows.map((r) => ({ json: r && r.json ? r.json : r }));"
+      },
+      "id": "e5",
+      "name": "Expand Report_TikTok_Overview Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_TikTok_Overview"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "w5",
+      "name": "Write Report_TikTok_Overview",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1620,
+        96
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_TikTok_Weekly"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": false
+      },
+      "id": "c6",
+      "name": "Clear Report_TikTok_Weekly",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1140,
+        256
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = (items[0] && items[0].json && items[0].json.rows) || [];\nif (!rows.length) throw new Error('Expand Report_TikTok_Weekly: received no rows - refusing to write an empty tab after the clear');\nreturn rows.map((r) => ({ json: r && r.json ? r.json : r }));"
+      },
+      "id": "e6",
+      "name": "Expand Report_TikTok_Weekly Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_TikTok_Weekly"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "w6",
+      "name": "Write Report_TikTok_Weekly",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1620,
+        256
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_TikTok_Ad_Performance"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": false
+      },
+      "id": "c7",
+      "name": "Clear Report_TikTok_Ad_Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1140,
+        416
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = (items[0] && items[0].json && items[0].json.rows) || [];\nif (!rows.length) throw new Error('Expand Report_TikTok_Ad_Performance: received no rows - refusing to write an empty tab after the clear');\nreturn rows.map((r) => ({ json: r && r.json ? r.json : r }));"
+      },
+      "id": "e7",
+      "name": "Expand Report_TikTok_Ad_Performance Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_TikTok_Ad_Performance"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "w7",
+      "name": "Write Report_TikTok_Ad_Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1620,
+        416
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_TikTok_Creative_Rollup"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": false
+      },
+      "id": "c8",
+      "name": "Clear Report_TikTok_Creative_Rollup",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1140,
+        576
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = (items[0] && items[0].json && items[0].json.rows) || [];\nif (!rows.length) throw new Error('Expand Report_TikTok_Creative_Rollup: received no rows - refusing to write an empty tab after the clear');\nreturn rows.map((r) => ({ json: r && r.json ? r.json : r }));"
+      },
+      "id": "e8",
+      "name": "Expand Report_TikTok_Creative_Rollup Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_TikTok_Creative_Rollup"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "w8",
+      "name": "Write Report_TikTok_Creative_Rollup",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1620,
+        576
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_Combined"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": false
+      },
+      "id": "c9",
+      "name": "Clear Report_Combined",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1140,
+        736
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = (items[0] && items[0].json && items[0].json.rows) || [];\nif (!rows.length) throw new Error('Expand Report_Combined: received no rows - refusing to write an empty tab after the clear');\nreturn rows.map((r) => ({ json: r && r.json ? r.json : r }));"
+      },
+      "id": "e9",
+      "name": "Expand Report_Combined Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Report_Combined"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "w9",
+      "name": "Write Report_Combined",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1620,
+        736
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 9,
+        "options": {
+          "additionalOptions": {
+            "alternateInputs": false
+          }
+        }
+      },
+      "id": "mg1",
+      "name": "Join All Report Writes",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1408,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const period=$('Set Period').first().json;\nconst packed=$('Combined Aggregator').first().json.rows || [];\nconst combined=packed;\nconst get=(metric)=>combined.find(r=>r.Metric===metric)||{};\nconst spend=get('Spend'), purchases=get('Purchases'), value=get('Purchases Value'), roas=get('ROAS');\nconst money=(v)=>v===''||v===undefined||v===null?'n/a':Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});\nconst x=(v)=>v===''||v===undefined||v===null?'n/a':v;\nif(!combined.length) throw new Error('Combined Aggregator produced no rows - refusing to send an empty report');\nconst sheetUrl='https://docs.google.com/spreadsheets/d/1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE/edit';\nconst text=`GoFresh Ads Report - ${period.periodLabel}\\n\\n`+\n`Period: ${period.periodStart} to ${period.periodEnd}\\n\\n`+\n`Combined Spend: ${money(spend.Combined)}\\n`+\n`Combined Purchases: ${x(purchases.Combined)}\\n`+\n`Combined Purchases Value: ${money(value.Combined)}\\n`+\n`Combined ROAS: ${x(roas.Combined)}\\n\\n`+\n`Meta   - Spend: ${money(spend.Meta)}, ROAS: ${x(roas.Meta)}\\n`+\n`TikTok - Spend: ${money(spend.TikTok)}, ROAS: ${x(roas.TikTok)}\\n\\n`+\n`Full report: ${sheetUrl}`;\nreturn [{json:{subject:`GoFresh Ads Report - ${period.periodLabel}`, text}}];"
+      },
+      "id": "em1",
+      "name": "Compose Report Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "PASTE_ALERT_SENDER_EMAIL@example.com",
+        "toEmail": "PASTE_YOUR_REPORT_EMAIL@example.com",
+        "subject": "={{ $json.subject }}",
+        "text": "={{ $json.text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "em2",
+      "name": "Send Report Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1888,
+        160
+      ],
+      "webhookId": "90e88a71-3cf4-4f5f-811b-f4b5b58338fa"
+    }
+  ],
+  "connections": {
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Set Manual Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Weekly Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monthly Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Monthly Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Manual Period": {
+      "main": [
+        [
+          {
+            "node": "Set Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Weekly Period": {
+      "main": [
+        [
+          {
+            "node": "Set Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Monthly Period": {
+      "main": [
+        [
+          {
+            "node": "Set Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Period": {
+      "main": [
+        [
+          {
+            "node": "Read Daily_Raw_Meta",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Daily_Raw_Meta_Ads",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Daily_Raw_TikTok",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Daily_Raw_TikTok_Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Join Overview Reads": {
+      "main": [
+        [
+          {
+            "node": "Combined Aggregator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Meta": {
+      "main": [
+        [
+          {
+            "node": "Join Overview Reads",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Meta Overview Aggregator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Meta Weekly Aggregator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Meta Ads": {
+      "main": [
+        [
+          {
+            "node": "Meta Ad Performance Aggregator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Meta Creative Rollup Aggregator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize TikTok": {
+      "main": [
+        [
+          {
+            "node": "Join Overview Reads",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "TikTok Overview Aggregator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "TikTok Weekly Aggregator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize TikTok Ads": {
+      "main": [
+        [
+          {
+            "node": "TikTok Ad Performance Aggregator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "TikTok Creative Rollup Aggregator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Daily_Raw_Meta": {
+      "main": [
+        [
+          {
+            "node": "Normalize Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Daily_Raw_Meta_Ads": {
+      "main": [
+        [
+          {
+            "node": "Normalize Meta Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Daily_Raw_TikTok": {
+      "main": [
+        [
+          {
+            "node": "Normalize TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Daily_Raw_TikTok_Ads": {
+      "main": [
+        [
+          {
+            "node": "Normalize TikTok Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meta Overview Aggregator": {
+      "main": [
+        [
+          {
+            "node": "Clear Report_Meta_Overview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Report_Meta_Overview": {
+      "main": [
+        [
+          {
+            "node": "Expand Report_Meta_Overview Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Report_Meta_Overview Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Report_Meta_Overview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Report_Meta_Overview": {
+      "main": [
+        [
+          {
+            "node": "Join All Report Writes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meta Weekly Aggregator": {
+      "main": [
+        [
+          {
+            "node": "Clear Report_Meta_Weekly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Report_Meta_Weekly": {
+      "main": [
+        [
+          {
+            "node": "Expand Report_Meta_Weekly Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Report_Meta_Weekly Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Report_Meta_Weekly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Report_Meta_Weekly": {
+      "main": [
+        [
+          {
+            "node": "Join All Report Writes",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Meta Ad Performance Aggregator": {
+      "main": [
+        [
+          {
+            "node": "Clear Report_Meta_Ad_Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Report_Meta_Ad_Performance": {
+      "main": [
+        [
+          {
+            "node": "Expand Report_Meta_Ad_Performance Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Report_Meta_Ad_Performance Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Report_Meta_Ad_Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Report_Meta_Ad_Performance": {
+      "main": [
+        [
+          {
+            "node": "Join All Report Writes",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Meta Creative Rollup Aggregator": {
+      "main": [
+        [
+          {
+            "node": "Clear Report_Meta_Creative_Rollup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Report_Meta_Creative_Rollup": {
+      "main": [
+        [
+          {
+            "node": "Expand Report_Meta_Creative_Rollup Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Report_Meta_Creative_Rollup Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Report_Meta_Creative_Rollup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Report_Meta_Creative_Rollup": {
+      "main": [
+        [
+          {
+            "node": "Join All Report Writes",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "TikTok Overview Aggregator": {
+      "main": [
+        [
+          {
+            "node": "Clear Report_TikTok_Overview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Report_TikTok_Overview": {
+      "main": [
+        [
+          {
+            "node": "Expand Report_TikTok_Overview Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Report_TikTok_Overview Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Report_TikTok_Overview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Report_TikTok_Overview": {
+      "main": [
+        [
+          {
+            "node": "Join All Report Writes",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "TikTok Weekly Aggregator": {
+      "main": [
+        [
+          {
+            "node": "Clear Report_TikTok_Weekly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Report_TikTok_Weekly": {
+      "main": [
+        [
+          {
+            "node": "Expand Report_TikTok_Weekly Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Report_TikTok_Weekly Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Report_TikTok_Weekly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Report_TikTok_Weekly": {
+      "main": [
+        [
+          {
+            "node": "Join All Report Writes",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "TikTok Ad Performance Aggregator": {
+      "main": [
+        [
+          {
+            "node": "Clear Report_TikTok_Ad_Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Report_TikTok_Ad_Performance": {
+      "main": [
+        [
+          {
+            "node": "Expand Report_TikTok_Ad_Performance Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Report_TikTok_Ad_Performance Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Report_TikTok_Ad_Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Report_TikTok_Ad_Performance": {
+      "main": [
+        [
+          {
+            "node": "Join All Report Writes",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "TikTok Creative Rollup Aggregator": {
+      "main": [
+        [
+          {
+            "node": "Clear Report_TikTok_Creative_Rollup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Report_TikTok_Creative_Rollup": {
+      "main": [
+        [
+          {
+            "node": "Expand Report_TikTok_Creative_Rollup Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Report_TikTok_Creative_Rollup Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Report_TikTok_Creative_Rollup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Report_TikTok_Creative_Rollup": {
+      "main": [
+        [
+          {
+            "node": "Join All Report Writes",
+            "type": "main",
+            "index": 7
+          }
+        ]
+      ]
+    },
+    "Combined Aggregator": {
+      "main": [
+        [
+          {
+            "node": "Clear Report_Combined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Report_Combined": {
+      "main": [
+        [
+          {
+            "node": "Expand Report_Combined Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Report_Combined Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Report_Combined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Report_Combined": {
+      "main": [
+        [
+          {
+            "node": "Join All Report Writes",
+            "type": "main",
+            "index": 8
+          }
+        ]
+      ]
+    },
+    "Join All Report Writes": {
+      "main": [
+        [
+          {
+            "node": "Compose Report Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Report Email": {
+      "main": [
+        [
+          {
+            "node": "Send Report Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "9df071be3540d8b54994d231aeb8bda34843d4fc0415c70e3399690bf7e7c6ec"
+  }
+}

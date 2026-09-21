@@ -157,12 +157,24 @@ All 9 `Write` nodes feed `Compose Report Email`. n8n ≥1.0 "executes each branc
 Fix, cheapest first:
 1. Route the email off **one** branch only — make the 9 writes a single chain `Write1 → Write2 → … → Write9 → Compose → Send`, or simply connect only `Write Report_Combined` to `Compose`.
 2. Or insert a `Merge` node (Inputs 2, mode `Choose Branch`, *Wait for all inputs to arrive*) between the fan-in and `Compose`.
-3. Or set `Execute Once` on `Compose Report Email`.
+3. Do **not** "fix" this with `Execute Once` on Compose — that trims items into the email node and
+   changes which rows it sees; it does not collapse the per-branch executions.
 
 ### 4.4 ⚠️ Every Clear runs once per row — wasted quota
 `clear.operation.ts` loops `for (let i = 0; i < items.length; i++)` around `sheet.clearData(range)`. Each Clear therefore issues **N identical `values.clear` calls**, N = rows from its aggregator: 13 for Meta Overview, 14 for TikTok Overview, 7 for Combined, and *one per ad* for the Ad Performance tabs. 80 ad rows → 80 clear calls to empty an already-empty tab. Sheets write quota is 300/min/user — 9 tabs × row counts is how you get rate-limited and how a run turns into a partial write (which then looks like §4.1).
 
-Fix: on all 9 Clear nodes → **Settings → Execute Once**. One clear call per tab. Do this before enabling `Keep First Row`.
+~~Fix: set Execute Once on the 9 Clear nodes~~ — **correction, that is the wrong fix.** n8n's Execute Once trims the node's *input* to the first item, and `clear.operation.ts` ends with `return items` — so the trimmed list flows on and the Write downstream receives **1 row instead of N**. Silent report truncation, worse than wasted quota.
+
+The fix that works is to make the Clear's input genuinely one item and re-expand afterwards:
+
+```
+Aggregator  ->  returns ONE item { rows: [...] }        // pack
+Clear       ->  1 item in, 1 values.clear call           // no executeOnce needed
+Expand      ->  rows.map(r => ({ json: r }))            // unpack
+Write       ->  N rows                                    // append
+```
+
+Implemented as FIX-3 in §6 and verified: 42 clear calls → 9, with all 13/14/7/N rows still written.
 
 ### 4.5 ⚠️ `Combined Aggregator` reads a node that is not its ancestor
 `$('Read Daily_Raw_Meta').all()` is a cross-branch lookup — the Meta read lives on another branch and is **not** upstream of `Combined Aggregator` (verified: graph check reports `!! NOT an ancestor`). It works today only because branch order follows canvas position top-to-bottom and `Read Daily_Raw_Meta` sits at y = −336, above the TikTok branch at y = 144. Drag those nodes and Meta silently reads as empty → the Combined tab's Meta column goes to 0 while TikTok looks fine.
@@ -184,13 +196,56 @@ Weekly runs Monday 07:00 and computes **last Mon–Sun**; monthly runs on the 1s
 
 ---
 
+## 6. Applied in `workflow.fixed.json` (55 nodes)
+
+Import file: **`workflow.fixed.json`** (repo root). Import → *from file*. Regenerate: `python3 analysis/build_fixed.py`.
+Check it: `python3 analysis/validate.py` then `node analysis/run_nodes.js`.
+
+| FIX | change | nodes |
+|---|---|---|
+| 1 | all 9 Writes converge on a 9-input **Merge** (`Join All Report Writes`) before Compose → exactly one email | +1 Merge |
+| 2 | `Normalize <tab>` Code node per raw tab: `Date` → ISO (accepts `yyyy-mm-dd`, `d/m/yyyy`, `m/d/yyyy`, serial numbers), measures → real numbers (strips `,`, `EGP`, `$`, NBSP), aborts on an upstream read error | +4 Code |
+| 3 | pack → Clear → expand → Write: one `values.clear` per tab instead of one per row | +9 Expand |
+| 4 | every aggregator throws on `rows.length === 0`; every Expand throws on 0 rows — a bad read can no longer publish zeros over a good report | 13 edited |
+| 5 | `Combined Aggregator` fed by `Join Overview Reads` (Merge) with `Source` tags, instead of `$('Read Daily_Raw_Meta')` reaching across branches | +1 Merge |
+| 6 | weekly tabs sorted by `Period_Start`; `Rank` = chronological, new `ROAS_Rank` keeps the best-week ranking | 2 edited |
+| 7 | email: `text` body bound (`={{ $json.text }}` — the original set only a subject), thousands-formatted money, `n/a` instead of `undefined`, period dates in the body, throws rather than sending an empty report | 1 edited |
+| 8 | `retryOnFail` (3 tries, 2s) on the 4 reads and 9 clears — **deliberately not on the appends**, where a retry would double-write rows | 13 edited |
+| 9 | Clear nodes now pin `clear: "wholeSheet"`, `keepFirstRow: false` explicitly, so a future UI default change can't silently alter behaviour | 9 edited |
+
+### Proven, not asserted — `analysis/run_nodes.js` (mini n8n emulator: real `items`, `$('node')`, per-item clear loop, header-rebuild-on-empty append, junction-runs-per-parent)
+
+```
+A. healthy run ......... 43 checks: Meta Spend 150.25, CPM 10.02, ROAS 2.4958,
+                         Combined 210.25 = Meta + TikTok, share 71.46%, ONE email,
+                         9 clear calls, 13 metric rows (not 1), no 'rows' column leak
+B. faithful pre-fix .... 9 emails, 42 clear calls, same numbers -> fixes change plumbing only
+C. broken read ......... fixed: aborts, old report intact (Spend still 999), no email,
+                         the affected tab never cleared; sibling tabs still refresh (correct)
+                         pre-fix: same failure => Spend 0 across 14 rows  <-- the bug being killed
+D. messy input ......... 25/9/2026 -> 2026-09-25, "1,200 EGP" -> 1200, serial 46287 -> today
+E. weekly ordering ..... rows chronological, Rank chronological, ROAS_Rank kept separately
+```
+
+### Before you activate
+
+1. `Send Report Email` → pick/create an SMTP credential and replace the two `PASTE_*` addresses.
+2. Open **`Normalize <tab>`** and set `DATE_ORDER` to `'dmy'` or `'mdy'` if your raw tabs display anything other than `yyyy-mm-dd` (`'auto'` guesses, and guesses when both numbers are ≤ 12).
+3. Sanity-check the raw tab headers: `Spend, Impressions, Reach, Clicks, LPV, Profile_Visits, Follows, Adds_to_Cart, Initiate_Checkout, Purchases, Purchases_Value` plus `Ad_ID / Ad_Name / Campaign_Name / AdGroup_Name / AdSet_Name / Creative_Key` on the `*_Ads` tabs. Renamed columns now abort the run instead of becoming silent zeros — that is intentional.
+4. Test on a **copy of the spreadsheet**, not production: point `documentId` at the copy. A manual run still clears and rewrites all 9 report tabs.
+5. Expect the header row of each report tab to be rewritten from the code's field names on the first run (e.g. `Adds to Cart`, `Purchases_Value`, new `ROAS_Rank`).
+
+Not changed (needs your decision, see §4.7): the crons are still `0 7 * * 1` / `15 7 1 * *`. If ingestion writes yesterday's numbers after 07:00, the report runs with the last day missing — move to after ingestion, or the monthly to the 2nd.
+
+---
+
 ## 5. Priority list
 
 | # | action | why |
 |---|---|---|
 | 1 | Throw on `!rows.length` in each aggregator (§4.1) | stops zeros/blank tabs overwriting good reports |
 | 2 | Normalize `Date` + currency parsing (§4.2) | silent zero-data, every run |
-| 3 | `Execute Once` on the 9 Clears (§4.4) | quota, partial writes |
+| 3 | pack/expand around the 9 Clears (§4.4) — **not** Execute Once | quota, latency, partial writes |
 | 4 | Single chain or Merge before `Compose` (§4.3) | duplicate emails |
 | 5 | Join both reads before `Combined` (§4.5) | position-dependent correctness |
 | 6 | Sort weekly by `Period_Start` (§4.6) | readable trend |
