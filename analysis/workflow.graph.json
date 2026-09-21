@@ -1,0 +1,1131 @@
+{
+ "nodes": [
+  {
+   "parameters": {},
+   "id": "t1",
+   "name": "Manual Test",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [
+    -256,
+    -48
+   ]
+  },
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "cronExpression",
+       "expression": "0 7 * * 1"
+      }
+     ]
+    }
+   },
+   "id": "t2",
+   "name": "Weekly Trigger",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    -256,
+    160
+   ]
+  },
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "cronExpression",
+       "expression": "15 7 1 * *"
+      }
+     ]
+    }
+   },
+   "id": "t3",
+   "name": "Monthly Trigger",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    -256,
+    368
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const until=$today.minus({days:1});const since=until.minus({days:6});"
+   },
+   "id": "p1",
+   "name": "Set Manual Period",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    0,
+    -48
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const start=$now.minus({weeks:1}).startOf('week');"
+   },
+   "id": "p2",
+   "name": "Set Weekly Period",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    0,
+    160
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const start=$now.minus({months:1}).startOf('month');"
+   },
+   "id": "p3",
+   "name": "Set Monthly Period",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    0,
+    368
+   ]
+  },
+  {
+   "parameters": {},
+   "id": "sp",
+   "name": "Set Period",
+   "type": "n8n-nodes-base.noOp",
+   "typeVersion": 1,
+   "position": [
+    240,
+    160
+   ]
+  },
+  {
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+    },
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Daily_Raw_Meta"
+    },
+    "options": {}
+   },
+   "id": "r1",
+   "name": "Read Daily_Raw_Meta",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    480,
+    -336
+   ],
+   "alwaysOutputData": true,
+   "onError": "continueRegularOutput"
+  },
+  {
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+    },
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Daily_Raw_Meta_Ads"
+    },
+    "options": {}
+   },
+   "id": "r2",
+   "name": "Read Daily_Raw_Meta_Ads",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    480,
+    -96
+   ],
+   "alwaysOutputData": true,
+   "onError": "continueRegularOutput"
+  },
+  {
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+    },
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Daily_Raw_TikTok"
+    },
+    "options": {}
+   },
+   "id": "r3",
+   "name": "Read Daily_Raw_TikTok",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    480,
+    144
+   ],
+   "alwaysOutputData": true,
+   "onError": "continueRegularOutput"
+  },
+  {
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+    },
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Daily_Raw_TikTok_Ads"
+    },
+    "options": {}
+   },
+   "id": "r4",
+   "name": "Read Daily_Raw_TikTok_Ads",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    480,
+    384
+   ],
+   "alwaysOutputData": true,
+   "onError": "continueRegularOutput"
+  },
+  {
+   "parameters": {
+    "jsCode": "const period=$('Set Period').first().json;"
+   },
+   "id": "a1",
+   "name": "Meta Overview Aggregator",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    768,
+    -416
+   ],
+   "_out": 13
+  },
+  {
+   "parameters": {
+    "jsCode": "const period=$('Set Period').first().json;"
+   },
+   "id": "a2",
+   "name": "Meta Weekly Aggregator",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    768,
+    -256
+   ],
+   "_out": "weeks"
+  },
+  {
+   "parameters": {
+    "jsCode": "const period=$('Set Period').first().json;"
+   },
+   "id": "a3",
+   "name": "Meta Ad Performance Aggregator",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    768,
+    -96
+   ],
+   "_out": "ads"
+  },
+  {
+   "parameters": {
+    "jsCode": "const period=$('Set Period').first().json;"
+   },
+   "id": "a4",
+   "name": "Meta Creative Rollup Aggregator",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    768,
+    64
+   ],
+   "_out": "creatives"
+  },
+  {
+   "parameters": {
+    "jsCode": "const period=$('Set Period').first().json;"
+   },
+   "id": "a5",
+   "name": "TikTok Overview Aggregator",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    768,
+    144
+   ],
+   "_out": 14
+  },
+  {
+   "parameters": {
+    "jsCode": "const period=$('Set Period').first().json;"
+   },
+   "id": "a6",
+   "name": "TikTok Weekly Aggregator",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    768,
+    304
+   ],
+   "_out": "weeks"
+  },
+  {
+   "parameters": {
+    "jsCode": "const period=$('Set Period').first().json;"
+   },
+   "id": "a7",
+   "name": "TikTok Ad Performance Aggregator",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    768,
+    448
+   ],
+   "_out": "ads"
+  },
+  {
+   "parameters": {
+    "jsCode": "const period=$('Set Period').first().json;"
+   },
+   "id": "a8",
+   "name": "TikTok Creative Rollup Aggregator",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    768,
+    608
+   ],
+   "_out": "creatives"
+  },
+  {
+   "parameters": {
+    "jsCode": "const period=$('Set Period').first().json;\nconst metaRows=$('Read Daily_Raw_Meta').all();\nconst ttRows=$('Read Daily_Raw_TikTok').all();"
+   },
+   "id": "a9",
+   "name": "Combined Aggregator",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    768,
+    768
+   ],
+   "_out": 7
+  },
+  {
+   "parameters": {
+    "operation": "clear",
+    "sheetName": {
+     "value": "Report_Meta_Overview"
+    }
+   },
+   "id": "c1",
+   "name": "Clear Report_Meta_Overview",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1040,
+    -416
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "sheetName": {
+     "value": "Report_Meta_Overview"
+    },
+    "columns": {
+     "mappingMode": "autoMapInputData",
+     "value": {},
+     "matchingColumns": [],
+     "schema": []
+    },
+    "options": {}
+   },
+   "id": "w1",
+   "name": "Write Report_Meta_Overview",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1280,
+    -416
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "clear",
+    "sheetName": {
+     "value": "Report_Meta_Weekly"
+    }
+   },
+   "id": "c2",
+   "name": "Clear Report_Meta_Weekly",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1040,
+    -256
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "sheetName": {
+     "value": "Report_Meta_Weekly"
+    }
+   },
+   "id": "w2",
+   "name": "Write Report_Meta_Weekly",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1280,
+    -256
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "clear",
+    "sheetName": {
+     "value": "Report_Meta_Ad_Performance"
+    }
+   },
+   "id": "c3",
+   "name": "Clear Report_Meta_Ad_Performance",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1040,
+    -96
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "sheetName": {
+     "value": "Report_Meta_Ad_Performance"
+    }
+   },
+   "id": "w3",
+   "name": "Write Report_Meta_Ad_Performance",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1280,
+    -96
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "clear",
+    "sheetName": {
+     "value": "Report_Meta_Creative_Rollup"
+    }
+   },
+   "id": "c4",
+   "name": "Clear Report_Meta_Creative_Rollup",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1040,
+    64
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "sheetName": {
+     "value": "Report_Meta_Creative_Rollup"
+    }
+   },
+   "id": "w4",
+   "name": "Write Report_Meta_Creative_Rollup",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1280,
+    64
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "clear",
+    "sheetName": {
+     "value": "Report_TikTok_Overview"
+    }
+   },
+   "id": "c5",
+   "name": "Clear Report_TikTok_Overview",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1040,
+    144
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "sheetName": {
+     "value": "Report_TikTok_Overview"
+    }
+   },
+   "id": "w5",
+   "name": "Write Report_TikTok_Overview",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1280,
+    144
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "clear",
+    "sheetName": {
+     "value": "Report_TikTok_Weekly"
+    }
+   },
+   "id": "c6",
+   "name": "Clear Report_TikTok_Weekly",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1040,
+    304
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "sheetName": {
+     "value": "Report_TikTok_Weekly"
+    }
+   },
+   "id": "w6",
+   "name": "Write Report_TikTok_Weekly",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1280,
+    304
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "clear",
+    "sheetName": {
+     "value": "Report_TikTok_Ad_Performance"
+    }
+   },
+   "id": "c7",
+   "name": "Clear Report_TikTok_Ad_Performance",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1040,
+    448
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "sheetName": {
+     "value": "Report_TikTok_Ad_Performance"
+    }
+   },
+   "id": "w7",
+   "name": "Write Report_TikTok_Ad_Performance",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1280,
+    448
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "clear",
+    "sheetName": {
+     "value": "Report_TikTok_Creative_Rollup"
+    }
+   },
+   "id": "c8",
+   "name": "Clear Report_TikTok_Creative_Rollup",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1040,
+    608
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "sheetName": {
+     "value": "Report_TikTok_Creative_Rollup"
+    }
+   },
+   "id": "w8",
+   "name": "Write Report_TikTok_Creative_Rollup",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1280,
+    608
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "clear",
+    "sheetName": {
+     "value": "Report_Combined"
+    }
+   },
+   "id": "c9",
+   "name": "Clear Report_Combined",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1040,
+    768
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "sheetName": {
+     "value": "Report_Combined"
+    },
+    "columns": {
+     "mappingMode": "autoMapInputData",
+     "value": {},
+     "matchingColumns": [],
+     "schema": []
+    },
+    "options": {}
+   },
+   "id": "w9",
+   "name": "Write Report_Combined",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.7,
+   "position": [
+    1280,
+    768
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const period=$('Set Period').first().json;\nconst combined=$('Combined Aggregator').all();"
+   },
+   "id": "em1",
+   "name": "Compose Report Email",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1568,
+    160
+   ]
+  },
+  {
+   "parameters": {
+    "fromEmail": "PASTE_ALERT_SENDER_EMAIL@example.com",
+    "toEmail": "PASTE_YOUR_REPORT_EMAIL@example.com"
+   },
+   "id": "em2",
+   "name": "Send Report Email",
+   "type": "n8n-nodes-base.emailSend",
+   "typeVersion": 2.1,
+   "position": [
+    1808,
+    160
+   ]
+  }
+ ],
+ "connections": {
+  "Manual Test": {
+   "main": [
+    [
+     {
+      "node": "Set Manual Period",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Weekly Trigger": {
+   "main": [
+    [
+     {
+      "node": "Set Weekly Period",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Monthly Trigger": {
+   "main": [
+    [
+     {
+      "node": "Set Monthly Period",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Set Manual Period": {
+   "main": [
+    [
+     {
+      "node": "Set Period",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Set Weekly Period": {
+   "main": [
+    [
+     {
+      "node": "Set Period",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Set Monthly Period": {
+   "main": [
+    [
+     {
+      "node": "Set Period",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Set Period": {
+   "main": [
+    [
+     {
+      "node": "Read Daily_Raw_Meta",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "Read Daily_Raw_Meta_Ads",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "Read Daily_Raw_TikTok",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "Read Daily_Raw_TikTok_Ads",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Daily_Raw_Meta": {
+   "main": [
+    [
+     {
+      "node": "Meta Overview Aggregator",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "Meta Weekly Aggregator",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Daily_Raw_Meta_Ads": {
+   "main": [
+    [
+     {
+      "node": "Meta Ad Performance Aggregator",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "Meta Creative Rollup Aggregator",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Daily_Raw_TikTok": {
+   "main": [
+    [
+     {
+      "node": "TikTok Overview Aggregator",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "TikTok Weekly Aggregator",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "Combined Aggregator",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Daily_Raw_TikTok_Ads": {
+   "main": [
+    [
+     {
+      "node": "TikTok Ad Performance Aggregator",
+      "type": "main",
+      "index": 0
+     },
+     {
+      "node": "TikTok Creative Rollup Aggregator",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Meta Overview Aggregator": {
+   "main": [
+    [
+     {
+      "node": "Clear Report_Meta_Overview",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Meta Weekly Aggregator": {
+   "main": [
+    [
+     {
+      "node": "Clear Report_Meta_Weekly",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Meta Ad Performance Aggregator": {
+   "main": [
+    [
+     {
+      "node": "Clear Report_Meta_Ad_Performance",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Meta Creative Rollup Aggregator": {
+   "main": [
+    [
+     {
+      "node": "Clear Report_Meta_Creative_Rollup",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "TikTok Overview Aggregator": {
+   "main": [
+    [
+     {
+      "node": "Clear Report_TikTok_Overview",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "TikTok Weekly Aggregator": {
+   "main": [
+    [
+     {
+      "node": "Clear Report_TikTok_Weekly",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "TikTok Ad Performance Aggregator": {
+   "main": [
+    [
+     {
+      "node": "Clear Report_TikTok_Ad_Performance",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "TikTok Creative Rollup Aggregator": {
+   "main": [
+    [
+     {
+      "node": "Clear Report_TikTok_Creative_Rollup",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Combined Aggregator": {
+   "main": [
+    [
+     {
+      "node": "Clear Report_Combined",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clear Report_Meta_Overview": {
+   "main": [
+    [
+     {
+      "node": "Write Report_Meta_Overview",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write Report_Meta_Overview": {
+   "main": [
+    [
+     {
+      "node": "Compose Report Email",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clear Report_Meta_Weekly": {
+   "main": [
+    [
+     {
+      "node": "Write Report_Meta_Weekly",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write Report_Meta_Weekly": {
+   "main": [
+    [
+     {
+      "node": "Compose Report Email",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clear Report_Meta_Ad_Performance": {
+   "main": [
+    [
+     {
+      "node": "Write Report_Meta_Ad_Performance",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write Report_Meta_Ad_Performance": {
+   "main": [
+    [
+     {
+      "node": "Compose Report Email",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clear Report_Meta_Creative_Rollup": {
+   "main": [
+    [
+     {
+      "node": "Write Report_Meta_Creative_Rollup",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write Report_Meta_Creative_Rollup": {
+   "main": [
+    [
+     {
+      "node": "Compose Report Email",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clear Report_TikTok_Overview": {
+   "main": [
+    [
+     {
+      "node": "Write Report_TikTok_Overview",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write Report_TikTok_Overview": {
+   "main": [
+    [
+     {
+      "node": "Compose Report Email",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clear Report_TikTok_Weekly": {
+   "main": [
+    [
+     {
+      "node": "Write Report_TikTok_Weekly",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write Report_TikTok_Weekly": {
+   "main": [
+    [
+     {
+      "node": "Compose Report Email",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clear Report_TikTok_Ad_Performance": {
+   "main": [
+    [
+     {
+      "node": "Write Report_TikTok_Ad_Performance",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write Report_TikTok_Ad_Performance": {
+   "main": [
+    [
+     {
+      "node": "Compose Report Email",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clear Report_TikTok_Creative_Rollup": {
+   "main": [
+    [
+     {
+      "node": "Write Report_TikTok_Creative_Rollup",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write Report_TikTok_Creative_Rollup": {
+   "main": [
+    [
+     {
+      "node": "Compose Report Email",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clear Report_Combined": {
+   "main": [
+    [
+     {
+      "node": "Write Report_Combined",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write Report_Combined": {
+   "main": [
+    [
+     {
+      "node": "Compose Report Email",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Compose Report Email": {
+   "main": [
+    [
+     {
+      "node": "Send Report Email",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ }
+}

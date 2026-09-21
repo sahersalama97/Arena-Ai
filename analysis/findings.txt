@@ -1,0 +1,62 @@
+== TABS ==
+cleared: 9 | appended: 9 | read: 4
+clear set == write set: True
+non-Report tab cleared: NONE  <-- raw data never wiped
+read & cleared: NONE  <-- nothing is both read and cleared
+
+== CLEAR PARAMS ==
+  Clear Report_Meta_Overview             Clear=DEFAULT: Whole Sheet  keepFirstRow=DEFAULT: false  options=ABSENT
+  Clear Report_Meta_Weekly               Clear=DEFAULT: Whole Sheet  keepFirstRow=DEFAULT: false  options=ABSENT
+  Clear Report_Meta_Ad_Performance       Clear=DEFAULT: Whole Sheet  keepFirstRow=DEFAULT: false  options=ABSENT
+  Clear Report_Meta_Creative_Rollup      Clear=DEFAULT: Whole Sheet  keepFirstRow=DEFAULT: false  options=ABSENT
+  Clear Report_TikTok_Overview           Clear=DEFAULT: Whole Sheet  keepFirstRow=DEFAULT: false  options=ABSENT
+  Clear Report_TikTok_Weekly             Clear=DEFAULT: Whole Sheet  keepFirstRow=DEFAULT: false  options=ABSENT
+  Clear Report_TikTok_Ad_Performance     Clear=DEFAULT: Whole Sheet  keepFirstRow=DEFAULT: false  options=ABSENT
+  Clear Report_TikTok_Creative_Rollup    Clear=DEFAULT: Whole Sheet  keepFirstRow=DEFAULT: false  options=ABSENT
+  Clear Report_Combined                  Clear=DEFAULT: Whole Sheet  keepFirstRow=DEFAULT: false  options=ABSENT
+
+== FAN-IN (parents > 1) ==
+  Set Period: 3 parents -> ['Set Manual Period', 'Set Weekly Period', 'Set Monthly Period']
+  Compose Report Email: 9 parents -> ['Write Report_Meta_Overview', 'Write Report_Meta_Weekly', 'Write Report_Meta_Ad_Performance', 'Write Report_Meta_Creative_Rollup', 'Write Report_TikTok_Overview', 'Write Report_TikTok_Weekly', 'Write Report_TikTok_Ad_Performance', 'Write Report_TikTok_Creative_Rollup', 'Write Report_Combined']
+
+== ITEMS FEEDING EACH CLEAR (n8n loops clear per item) ==
+  Clear Report_Meta_Overview             <- Meta Overview Aggregator             rows=13
+  Clear Report_Meta_Weekly               <- Meta Weekly Aggregator               rows=weeks
+  Clear Report_Meta_Ad_Performance       <- Meta Ad Performance Aggregator       rows=ads
+  Clear Report_Meta_Creative_Rollup      <- Meta Creative Rollup Aggregator      rows=creatives
+  Clear Report_TikTok_Overview           <- TikTok Overview Aggregator           rows=14
+  Clear Report_TikTok_Weekly             <- TikTok Weekly Aggregator             rows=weeks
+  Clear Report_TikTok_Ad_Performance     <- TikTok Ad Performance Aggregator     rows=ads
+  Clear Report_TikTok_Creative_Rollup    <- TikTok Creative Rollup Aggregator    rows=creatives
+  Clear Report_Combined                  <- Combined Aggregator                  rows=7
+
+== CROSS-BRANCH $() LOOKUPS ==
+  Meta Overview Aggregator       -> $('Set Period') OK(in ancestors)
+  Meta Weekly Aggregator         -> $('Set Period') OK(in ancestors)
+  Meta Ad Performance Aggregator -> $('Set Period') OK(in ancestors)
+  Meta Creative Rollup Aggregator -> $('Set Period') OK(in ancestors)
+  TikTok Overview Aggregator     -> $('Set Period') OK(in ancestors)
+  TikTok Weekly Aggregator       -> $('Set Period') OK(in ancestors)
+  TikTok Ad Performance Aggregator -> $('Set Period') OK(in ancestors)
+  TikTok Creative Rollup Aggregator -> $('Set Period') OK(in ancestors)
+  Combined Aggregator            -> $('Set Period') OK(in ancestors)
+  Combined Aggregator            -> $('Read Daily_Raw_Meta') !! NOT an ancestor (cross-branch)
+  Combined Aggregator            -> $('Read Daily_Raw_TikTok') OK(in ancestors)
+  Compose Report Email           -> $('Set Period') OK(in ancestors)
+  Compose Report Email           -> $('Combined Aggregator') OK(in ancestors)
+
+== READ ERROR HANDLING ==
+  Read Daily_Raw_Meta: onError=continueRegularOutput alwaysOutputData=True
+  Read Daily_Raw_Meta_Ads: onError=continueRegularOutput alwaysOutputData=True
+  Read Daily_Raw_TikTok: onError=continueRegularOutput alwaysOutputData=True
+  Read Daily_Raw_TikTok_Ads: onError=continueRegularOutput alwaysOutputData=True
+
+== PLACEHOLDERS ==
+  Send Report Email: ['PASTE_ALERT_SENDER_EMAIL@example.com', 'PASTE_YOUR_REPORT_EMAIL@example.com']
+
+== COUNTS ==
+nodes: 40 | googleSheets: 22 | code: 13 | triggers: 3
+clear nodes: 9 | append nodes: 9
+
+== API CALL ESTIMATE (one write op = one API call, clears loop per item) ==
+  e.g. if Ad Performance has 80 rows -> Clear Report_Meta_Ad_Performance issues 80 identical values.clear calls
