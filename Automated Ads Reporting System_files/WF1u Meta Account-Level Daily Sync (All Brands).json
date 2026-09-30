@@ -91,16 +91,17 @@
     },
     {
       "parameters": {
-        "jsCode": "const DAYS_BACK = 7;\nconst until = $today.minus({ days: 1 });\nconst since = until.minus({ days: DAYS_BACK - 1 });\nreturn [{ json: { since: since.toISODate(), until: until.toISODate(), time_range: JSON.stringify({ since: since.toISODate(), until: until.toISODate() }) } }];"
+        "jsCode": "const until0 = $today.minus({ days: 1 });\nconst monthStart = $today.startOf('month');\nconst since = until0 < monthStart ? until0 : monthStart;\nconst until = until0;\nreturn [{ json: { since: since.toISODate(), until: until.toISODate(), time_range: JSON.stringify({ since: since.toISODate(), until: until.toISODate() }) } }];"
       },
       "id": "code1",
-      "name": "Date window (7d)",
+      "name": "Date window (current month)",
       "position": [
         672,
         -128
       ],
       "type": "n8n-nodes-base.code",
-      "typeVersion": 2
+      "typeVersion": 2,
+      "notes": "Fetches from the first day of the current month through yesterday. This backfills the current monthly report instead of only the last 7 days."
     },
     {
       "parameters": {
@@ -316,13 +317,13 @@
         [
           {
             "index": 0,
-            "node": "Date window (7d)",
+            "node": "Date window (current month)",
             "type": "main"
           }
         ]
       ]
     },
-    "Date window (7d)": {
+    "Date window (current month)": {
       "main": [
         [
           {
