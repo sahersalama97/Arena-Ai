@@ -128,6 +128,10 @@
               "value": "200"
             },
             {
+              "name": "use_unified_attribution_setting",
+              "value": "true"
+            },
+            {
               "name": "time_range",
               "value": "={{ $json.time_range }}"
             }
@@ -157,7 +161,7 @@
         }
       },
       "onError": "continueErrorOutput",
-      "notes": "Paginates via paging.next. Uses the shared token; assumes partner access to every brand's ad account."
+      "notes": "Uses Meta ad set/unified attribution setting so purchase/action totals align more closely with Ads Manager columns."
     },
     {
       "parameters": {

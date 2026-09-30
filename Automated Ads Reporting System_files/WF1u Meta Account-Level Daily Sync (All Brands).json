@@ -124,6 +124,10 @@
               "value": "1"
             },
             {
+              "name": "use_unified_attribution_setting",
+              "value": "true"
+            },
+            {
               "name": "time_range",
               "value": "={{ $json.time_range }}"
             }
@@ -150,7 +154,7 @@
         }
       },
       "onError": "continueErrorOutput",
-      "notes": "Uses the shared 'Header Auth account' token (Authorization: Bearer). Assumes that token's Business Manager has partner access to every brand's ad account in the registry."
+      "notes": "Uses Meta ad set/unified attribution setting so purchase/action totals align more closely with Ads Manager columns."
     },
     {
       "parameters": {
