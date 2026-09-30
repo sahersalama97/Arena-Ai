@@ -1,0 +1,814 @@
+{
+  "name": "WF_Provision Brand Sheets (Raw + Monthly Report)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "t1",
+      "name": "Manual Test",
+      "position": [
+        -304,
+        -96
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 4 * * *"
+            }
+          ]
+        }
+      },
+      "id": "t2",
+      "name": "Daily 04:30",
+      "position": [
+        -304,
+        112
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1567814218,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU/edit#gid=1567814218"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "id": "gs1",
+      "name": "Read Brand Registry",
+      "position": [
+        -64,
+        0
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.filter(i => (i.json.Status||'').toLowerCase()==='active');"
+      },
+      "id": "code1",
+      "name": "Filter active brands",
+      "position": [
+        192,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "loop1",
+      "name": "Loop brands",
+      "position": [
+        416,
+        0
+      ],
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.Raw_Sheet_ID }}",
+              "operator": {
+                "operation": "empty",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "if1",
+      "name": "Needs raw sheet?",
+      "position": [
+        672,
+        0
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "name": "={{ $json.Brand_Name }} - Raw Data",
+        "options": {}
+      },
+      "id": "drv1",
+      "name": "Copy Raw Data Template",
+      "position": [
+        912,
+        -128
+      ],
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5KJlnp3mTAKGBAdb",
+          "name": "Google Drive account 2"
+        }
+      },
+      "notes": "REQUIRES a Google Drive OAuth2 credential attached (none exists on this n8n instance yet) — create one named 'Google Drive account' using the same Google account as the Sheets credential."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1567814218,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU/edit#gid=1567814218"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Brand_Name": "={{ $('Needs raw sheet?').item.json.Brand_Name }}",
+            "Raw_Sheet_ID": "={{ $json.id }}",
+            "row_number": 0
+          },
+          "matchingColumns": [
+            "Brand_Name"
+          ],
+          "schema": [
+            {
+              "id": "Brand_Name",
+              "displayName": "Brand_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meta_Ad_Account_ID",
+              "displayName": "Meta_Ad_Account_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "TikTok_Advertiser_ID",
+              "displayName": "TikTok_Advertiser_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Report_Email",
+              "displayName": "Report_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Raw_Sheet_ID",
+              "displayName": "Raw_Sheet_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Current_Month_Report_Sheet_ID",
+              "displayName": "Current_Month_Report_Sheet_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Discovered_At",
+              "displayName": "Discovered_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "kind",
+              "displayName": "kind",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "mimeType",
+              "displayName": "mimeType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "gs2",
+      "name": "Save Raw_Sheet_ID",
+      "position": [
+        1152,
+        -128
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const brand = $('Loop brands').item.json;\nconst monthKey = $today.toFormat('yyyy-MM');\nconst monthLabel = $today.toFormat('LLLL yyyy');\nconst expectedTitle = `${brand.Brand_Name} - Ads Report - ${monthLabel}`;\nconst needsNewReportSheet = !brand.Current_Month_Report_Sheet_ID || brand.Current_Month_Report_Month !== monthKey;\nreturn [{ json: { Brand_Name: brand.Brand_Name, ExpectedTitle: expectedTitle, MonthKey: monthKey, NeedsNewReportSheet: needsNewReportSheet } }];"
+      },
+      "id": "code2",
+      "name": "Compute expected report title",
+      "position": [
+        912,
+        128
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "name": "={{ $('Compute expected report title').item.json.ExpectedTitle }}",
+        "options": {}
+      },
+      "id": "drv3",
+      "name": "Copy Ads Report Template",
+      "position": [
+        1632,
+        224
+      ],
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5KJlnp3mTAKGBAdb",
+          "name": "Google Drive account 2"
+        }
+      },
+      "notes": "Same Google Drive credential as the other two Drive nodes."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1567814218,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU/edit#gid=1567814218"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Brand_Name": "={{ $('Compute expected report title').item.json.Brand_Name }}",
+            "Current_Month_Report_Sheet_ID": "={{ $json.id }}",
+            "Current_Month_Report_Month": "={{ $('Compute expected report title').item.json.MonthKey }}"
+          },
+          "matchingColumns": [
+            "Brand_Name"
+          ],
+          "schema": [
+            {
+              "id": "Brand_Name",
+              "displayName": "Brand_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meta_Ad_Account_ID",
+              "displayName": "Meta_Ad_Account_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "TikTok_Advertiser_ID",
+              "displayName": "TikTok_Advertiser_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Report_Email",
+              "displayName": "Report_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Raw_Sheet_ID",
+              "displayName": "Raw_Sheet_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Current_Month_Report_Sheet_ID",
+              "displayName": "Current_Month_Report_Sheet_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Discovered_At",
+              "displayName": "Discovered_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "gs3",
+      "name": "Save Current_Month_Report_Sheet_ID",
+      "position": [
+        1872,
+        224
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "writer",
+            "type": "user",
+            "emailAddress": "={{ $('Loop brands').item.json.Report_Email }}"
+          }
+        },
+        "options": {
+          "sendNotificationEmail": true
+        }
+      },
+      "id": "share1",
+      "name": "Share Raw Sheet with Brand",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1152,
+        -288
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5KJlnp3mTAKGBAdb",
+          "name": "Google Drive account 2"
+        }
+      },
+      "disabled": true,
+      "notes": "Gives the brand's Report_Email edit access to their own Raw Data sheet."
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "writer",
+            "type": "user",
+            "emailAddress": "={{ $('Loop brands').item.json.Report_Email }}"
+          }
+        },
+        "options": {
+          "sendNotificationEmail": true
+        }
+      },
+      "id": "share2",
+      "name": "Share Report Sheet with Brand",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1632,
+        384
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5KJlnp3mTAKGBAdb",
+          "name": "Google Drive account 2"
+        }
+      },
+      "notes": "Gives the brand's Report_Email edit access to this month's Report sheet."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.NeedsNewReportSheet }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "if3",
+      "name": "Needs new report sheet?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1152,
+        128
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Read Brand Registry",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Daily 04:30": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Read Brand Registry",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Read Brand Registry": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Filter active brands",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Filter active brands": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Loop brands",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Loop brands": {
+      "main": [
+        [],
+        [
+          {
+            "index": 0,
+            "node": "Needs raw sheet?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Needs raw sheet?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Copy Raw Data Template",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Compute expected report title",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Copy Raw Data Template": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Save Raw_Sheet_ID",
+            "type": "main"
+          },
+          {
+            "node": "Share Raw Sheet with Brand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Raw_Sheet_ID": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Compute expected report title",
+            "type": "main"
+          },
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy Ads Report Template": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Save Current_Month_Report_Sheet_ID",
+            "type": "main"
+          },
+          {
+            "node": "Share Report Sheet with Brand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Current_Month_Report_Sheet_ID": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Loop brands",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Compute expected report title": {
+      "main": [
+        [
+          {
+            "node": "Needs new report sheet?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs new report sheet?": {
+      "main": [
+        [
+          {
+            "node": "Copy Ads Report Template",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Africa/Cairo"
+  },
+  "versionId": "c98a0d8e-47fa-4f16-a4b2-ae07863fde05",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9df071be3540d8b54994d231aeb8bda34843d4fc0415c70e3399690bf7e7c6ec"
+  },
+  "nodeGroups": [],
+  "id": "LqPsl7t7KPsk40VY",
+  "tags": []
+}

@@ -1,0 +1,688 @@
+{
+  "name": "WF2u TikTok Daily Sync (All Brands)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "t1",
+      "name": "Manual Test",
+      "position": [
+        -320,
+        0
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "t2",
+      "name": "Daily 06:30",
+      "position": [
+        -320,
+        208
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "id": "gs1",
+      "name": "Read Brand Registry",
+      "position": [
+        -64,
+        112
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.filter(i => (i.json.Status||'').toLowerCase()==='active' && i.json.TikTok_Advertiser_ID && i.json.Raw_Sheet_ID);"
+      },
+      "id": "code0",
+      "name": "Filter brands ready to sync",
+      "position": [
+        192,
+        112
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "loop1",
+      "name": "Loop brands",
+      "position": [
+        432,
+        112
+      ],
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "const DAYS_BACK = 7;\nconst until = $today.minus({ days: 1 });\nconst since = until.minus({ days: DAYS_BACK - 1 });\nreturn [{ json: { start_date: since.toISODate(), end_date: until.toISODate() } }];"
+      },
+      "id": "code1",
+      "name": "Date window (7d)",
+      "position": [
+        672,
+        112
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "notes": "TikTok tokens: verify your app's token lifecycle and set a renewal reminder — this workflow does not auto-refresh."
+    },
+    {
+      "parameters": {
+        "url": "https://business-api.tiktok.com/open_api/v1.3/report/integrated/get/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "advertiser_id",
+              "value": "={{ $('Loop brands').item.json.TikTok_Advertiser_ID }}"
+            },
+            {
+              "name": "report_type",
+              "value": "BASIC"
+            },
+            {
+              "name": "data_level",
+              "value": "AUCTION_ADVERTISER"
+            },
+            {
+              "name": "dimensions",
+              "value": "[\"stat_time_day\"]"
+            },
+            {
+              "name": "metrics",
+              "value": "[\"spend\",\"impressions\",\"reach\",\"cpm\",\"clicks\",\"ctr\",\"frequency\",\"profile_visits\",\"follows\",\"onsite_shopping_add_to_cart\",\"onsite_shopping_initiate_checkout_count\",\"onsite_shopping_purchase\",\"onsite_shopping_purchase_value\"]"
+            },
+            {
+              "name": "start_date",
+              "value": "={{ $json.start_date }}"
+            },
+            {
+              "name": "end_date",
+              "value": "={{ $json.end_date }}"
+            },
+            {
+              "name": "page_size",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "id": "http1",
+      "maxTries": 3,
+      "name": "TikTok Account-Level Report",
+      "position": [
+        912,
+        -16
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "suQTl3gzSWK4C4iE",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "VERIFY metrics/dimensions field names against TikTok's current Reporting API reference before enabling. Attach a Header Auth credential with header 'Access-Token: <token>' once created."
+    },
+    {
+      "parameters": {
+        "jsCode": "const METRIC_MAP={spend:'spend',impressions:'impressions',reach:'reach',cpm:'cpm',clicks:'clicks',ctr:'ctr',frequency:'frequency',profile_visits:'profile_visits',follows:'follows',atc:'onsite_shopping_add_to_cart',ic:'onsite_shopping_initiate_checkout_count',purchases:'onsite_shopping_purchase',purchases_value:'onsite_shopping_purchase_value'};\nfunction num(v){if(v==null||v==='')return 0;const n=Number(v);return Number.isFinite(n)?n:0;}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nconst out=[];\nfor(const item of items){\n  const j=item.json;\n  if(j&&j.code&&j.code!==0){out.push({json:{error:j.message||('TikTok API error code '+j.code)}});continue;}\n  const rows=j?.data?.list||[];\n  for(const row of rows){\n    const m=row.metrics||{};\n    const d=row.dimensions||{};\n    const spend=num(m[METRIC_MAP.spend]),impressions=num(m[METRIC_MAP.impressions]),purchases=num(m[METRIC_MAP.purchases]),purchasesValue=num(m[METRIC_MAP.purchases_value]),clicks=num(m[METRIC_MAP.clicks]);\n    out.push({json:{\n      Date:d.stat_time_day? String(d.stat_time_day).slice(0,10):'',\n      Spend:round(spend,2),\n      Impressions:impressions,\n      Reach:num(m[METRIC_MAP.reach]),\n      CPM:round(num(m[METRIC_MAP.cpm]),2),\n      Clicks:clicks,\n      CTR_Pct:round(num(m[METRIC_MAP.ctr]),4),\n      Frequency:round(num(m[METRIC_MAP.frequency]),2),\n      Profile_Visits:num(m[METRIC_MAP.profile_visits]),\n      Follows:num(m[METRIC_MAP.follows]),\n      Adds_to_Cart:num(m[METRIC_MAP.atc]),\n      Initiate_Checkout:num(m[METRIC_MAP.ic]),\n      Purchases:purchases,\n      Purchases_Value:round(purchasesValue,2),\n      ROAS:round(spend?purchasesValue/spend:0,4),\n      AOV:round(purchases?purchasesValue/purchases:0,2),\n      Purchase_CVR_Pct:round(clicks?(purchases/clicks)*100:0,4),\n      Pulled_At:new Date().toISOString()\n    }});\n  }\n}\nif(!out.length)return[{json:{error:'No TikTok account-level rows returned'}}];\nreturn out;"
+      },
+      "id": "code2",
+      "name": "Flatten account-level",
+      "position": [
+        1152,
+        -16
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "err",
+              "leftValue": "={{ $json.error }}",
+              "operator": {
+                "operation": "exists",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "if1",
+      "name": "Has error? (account)",
+      "position": [
+        1392,
+        -16
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Loop brands').item.json.Raw_Sheet_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok"
+        },
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "Date"
+          ],
+          "schema": [],
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "gs2",
+      "name": "Upsert Daily_Raw_TikTok",
+      "position": [
+        1632,
+        -96
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "PASTE_ALERT_SENDER_EMAIL@example.com",
+        "toEmail": "PASTE_YOUR_ALERT_EMAIL@example.com",
+        "subject": "=TikTok Account-Level Daily Sync FAILED - {{ $('Loop brands').item.json.Brand_Name }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "em1",
+      "name": "Email failure alert (account)",
+      "position": [
+        1632,
+        112
+      ],
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "webhookId": "f4e1ef02-6674-472f-bbc0-dc9b07060603",
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://business-api.tiktok.com/open_api/v1.3/report/integrated/get/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "advertiser_id",
+              "value": "={{ $('Loop brands').item.json.TikTok_Advertiser_ID }}"
+            },
+            {
+              "name": "report_type",
+              "value": "BASIC"
+            },
+            {
+              "name": "data_level",
+              "value": "AUCTION_AD"
+            },
+            {
+              "name": "dimensions",
+              "value": "[\"ad_id\",\"stat_time_day\"]"
+            },
+            {
+              "name": "metrics",
+              "value": "[\"ad_name\",\"campaign_name\",\"adgroup_name\",\"spend\",\"impressions\",\"reach\",\"cpm\",\"clicks\",\"ctr\",\"frequency\",\"profile_visits\",\"follows\",\"onsite_shopping_add_to_cart\",\"onsite_shopping_initiate_checkout_count\",\"onsite_shopping_purchase\",\"onsite_shopping_purchase_value\"]"
+            },
+            {
+              "name": "start_date",
+              "value": "={{ $json.start_date }}"
+            },
+            {
+              "name": "end_date",
+              "value": "={{ $json.end_date }}"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            },
+            {
+              "name": "page_size",
+              "value": "200"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "id": "http2",
+      "maxTries": 3,
+      "name": "TikTok Ad-Level Report",
+      "position": [
+        912,
+        240
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qQUVSfCeWtFUWkkM",
+          "name": "Meta-Access Tokens"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "VERIFY metrics/dimensions field names before enabling. Same 'Access-Token' credential as the account-level call."
+    },
+    {
+      "parameters": {
+        "jsCode": "const METRIC_MAP={ad_name:'ad_name',campaign_name:'campaign_name',adgroup_name:'adgroup_name',spend:'spend',impressions:'impressions',reach:'reach',cpm:'cpm',clicks:'clicks',ctr:'ctr',profile_visits:'profile_visits',follows:'follows',atc:'onsite_shopping_add_to_cart',ic:'onsite_shopping_initiate_checkout_count',purchases:'onsite_shopping_purchase',purchases_value:'onsite_shopping_purchase_value'};\nfunction num(v){if(v==null||v==='')return 0;const n=Number(v);return Number.isFinite(n)?n:0;}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nfunction creativeKey(adName){if(!adName)return '';let k=String(adName).toLowerCase();k=k.replace(/^\\s*(vid|pic|video|image)\\s*-\\s*/,'');return k.trim();}\nconst out=[];\nfor(const item of items){\n  const j=item.json;\n  if(j&&j.code&&j.code!==0){out.push({json:{error:j.message||('TikTok API error code '+j.code)}});continue;}\n  const rows=j?.data?.list||[];\n  for(const row of rows){\n    const m=row.metrics||{};\n    const d=row.dimensions||{};\n    const spend=num(m[METRIC_MAP.spend]),impressions=num(m[METRIC_MAP.impressions]),purchases=num(m[METRIC_MAP.purchases]),purchasesValue=num(m[METRIC_MAP.purchases_value]),clicks=num(m[METRIC_MAP.clicks]);\n    out.push({json:{\n      Date:d.stat_time_day? String(d.stat_time_day).slice(0,10):'',\n      Ad_ID:d.ad_id||'',\n      Ad_Name:m[METRIC_MAP.ad_name]||'',\n      Campaign_Name:m[METRIC_MAP.campaign_name]||'',\n      AdGroup_Name:m[METRIC_MAP.adgroup_name]||'',\n      Creative_Key:creativeKey(m[METRIC_MAP.ad_name]),\n      Spend:round(spend,2),\n      Impressions:impressions,\n      Reach:num(m[METRIC_MAP.reach]),\n      CPM:round(num(m[METRIC_MAP.cpm]),2),\n      Clicks:clicks,\n      CTR_Pct:round(num(m[METRIC_MAP.ctr]),4),\n      Profile_Visits:num(m[METRIC_MAP.profile_visits]),\n      Follows:num(m[METRIC_MAP.follows]),\n      Adds_to_Cart:num(m[METRIC_MAP.atc]),\n      Initiate_Checkout:num(m[METRIC_MAP.ic]),\n      Purchases:purchases,\n      Purchases_Value:round(purchasesValue,2),\n      ROAS:round(spend?purchasesValue/spend:0,4),\n      AOV:round(purchases?purchasesValue/purchases:0,2),\n      Purchase_CVR_Pct:round(clicks?(purchases/clicks)*100:0,4),\n      Pulled_At:new Date().toISOString()\n    }});\n  }\n}\nif(!out.length)return[{json:{error:'No TikTok ad-level rows returned'}}];\nreturn out;"
+      },
+      "id": "code3",
+      "name": "Flatten ad-level + creative key",
+      "position": [
+        1152,
+        240
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "err",
+              "leftValue": "={{ $json.error }}",
+              "operator": {
+                "operation": "exists",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "if2",
+      "name": "Has error? (ads)",
+      "position": [
+        1392,
+        240
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Loop brands').item.json.Raw_Sheet_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok_Ads"
+        },
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "Date",
+            "Ad_ID"
+          ],
+          "schema": [],
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "gs3",
+      "name": "Upsert Daily_Raw_TikTok_Ads",
+      "position": [
+        1632,
+        320
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "PASTE_ALERT_SENDER_EMAIL@example.com",
+        "toEmail": "PASTE_YOUR_ALERT_EMAIL@example.com",
+        "subject": "=TikTok Ad-Level Daily Sync FAILED - {{ $('Loop brands').item.json.Brand_Name }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "em2",
+      "name": "Email failure alert (ads)",
+      "position": [
+        1648,
+        544
+      ],
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "webhookId": "98b14678-6785-4533-882f-f2279908ab5c",
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Read Brand Registry",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Daily 06:30": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Read Brand Registry",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Read Brand Registry": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Filter brands ready to sync",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Filter brands ready to sync": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Loop brands",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Loop brands": {
+      "main": [
+        [],
+        [
+          {
+            "index": 0,
+            "node": "Date window (7d)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Date window (7d)": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "TikTok Account-Level Report",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "TikTok Account-Level Report": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Flatten account-level",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Email failure alert (account)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Flatten account-level": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Has error? (account)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Has error? (account)": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Email failure alert (account)",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Upsert Daily_Raw_TikTok",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "TikTok Ad-Level Report": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Flatten ad-level + creative key",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Email failure alert (ads)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Flatten ad-level + creative key": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Has error? (ads)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Has error? (ads)": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Email failure alert (ads)",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Upsert Daily_Raw_TikTok_Ads",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Upsert Daily_Raw_TikTok": {
+      "main": [
+        [
+          {
+            "node": "TikTok Ad-Level Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email failure alert (account)": {
+      "main": [
+        [
+          {
+            "node": "TikTok Ad-Level Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Daily_Raw_TikTok_Ads": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email failure alert (ads)": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Africa/Cairo"
+  },
+  "versionId": "89563e6d-d5ac-4c60-a255-e58288ad1d18",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9df071be3540d8b54994d231aeb8bda34843d4fc0415c70e3399690bf7e7c6ec"
+  },
+  "nodeGroups": [],
+  "id": "ZEdBO1ahf7qkmJSr",
+  "tags": []
+}
