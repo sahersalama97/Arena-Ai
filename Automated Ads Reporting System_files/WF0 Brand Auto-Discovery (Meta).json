@@ -1,0 +1,366 @@
+{
+  "name": "WF0 Brand Auto-Discovery (Meta)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "t1",
+      "name": "Manual Test",
+      "position": [
+        -160,
+        -80
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 5 * * *"
+            }
+          ]
+        }
+      },
+      "id": "t2",
+      "name": "Every day 05:00",
+      "position": [
+        -160,
+        112
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "url": "https://graph.facebook.com/v21.0/me/adaccounts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,name,account_status"
+            },
+            {
+              "name": "limit",
+              "value": "200"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {}
+        }
+      },
+      "alwaysOutputData": true,
+      "id": "http1",
+      "maxTries": 3,
+      "name": "List Meta Ad Accounts",
+      "position": [
+        80,
+        112
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qQUVSfCeWtFUWkkM",
+          "name": "Meta-Access Tokens"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Requires a System User token with access to every ad account (Business Manager > System Users > assign all ad accounts, or use a Business Manager owned-accounts token). Lists ALL ad accounts the token can see — each one becomes a 'brand' candidate."
+    },
+    {
+      "parameters": {
+        "jsCode": "const out=[];\nfor(const item of items){\n  const rows=item.json?.data||[];\n  for(const r of rows){\n    if(r.account_status===1||r.account_status==null){ // 1 = ACTIVE in Meta's enum; keep active accounts\n      out.push({json:{Meta_Ad_Account_ID:r.id, Brand_Name:r.name}});\n    }\n  }\n}\nreturn out;"
+      },
+      "id": "code1",
+      "name": "Flatten accounts",
+      "position": [
+        320,
+        112
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "id": "gs1",
+      "name": "Read Brand Registry",
+      "position": [
+        560,
+        112
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const existing=new Set($('Read Brand Registry').all().map(i=>i.json.Meta_Ad_Account_ID).filter(Boolean));\nconst candidates=$('Flatten accounts').all().map(i=>i.json);\nconst now=$now.toISO();\nconst out=candidates.filter(c=>!existing.has(c.Meta_Ad_Account_ID)).map(c=>({json:{\n  Brand_Name:c.Brand_Name,\n  Platform:'meta',\n  Meta_Ad_Account_ID:c.Meta_Ad_Account_ID,\n  TikTok_Advertiser_ID:'',\n  Report_Email:'PASTE_YOUR_EMAIL@example.com',\n  Raw_Sheet_ID:'',\n  Current_Month_Report_Sheet_ID:'',\n  Status:'needs_setup',\n  Discovered_At:now\n}}));\nreturn out.length? out : [{json:{__noNewBrands:true}}];"
+      },
+      "id": "code2",
+      "name": "Diff new brands",
+      "position": [
+        800,
+        112
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "Meta_Ad_Account_ID"
+          ],
+          "schema": [],
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "gs2",
+      "name": "Append new brands",
+      "position": [
+        1040,
+        112
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "New brands land with Status=needs_setup so they don't get synced/reported until you fill TikTok_Advertiser_ID + Report_Email and flip Status to 'active'. This is intentional — avoids silently syncing/reporting on a brand before it's fully configured."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.__noNewBrands }}",
+              "operator": {
+                "operation": "notExists",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "if1",
+      "name": "Has new brands?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const brands = items.map(i => i.json.Brand_Name + ' (act_' + i.json.Meta_Ad_Account_ID + ')');\nconst text = 'New Meta ad account(s) discovered and added to the Brand Registry as needs_setup:\\n\\n' + brands.join('\\n') + '\\n\\nTo activate: open the Brand Registry, fill in Report_Email (and TikTok_Advertiser_ID if this brand also runs TikTok), then set Status to \"active\". Nothing will sync or report for this brand until that happens.';\nreturn [{json:{subject: 'New brand(s) need setup: ' + brands.length, text}}];"
+      },
+      "id": "em1",
+      "name": "Compose new-brand alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "mhassaan344@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "em2",
+      "name": "Send new-brand alert",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1520,
+        272
+      ],
+      "webhookId": "6d9005f9-1250-4e69-9101-29ff2d1e032b",
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      },
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every day 05:00": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "List Meta Ad Accounts",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "List Meta Ad Accounts",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "List Meta Ad Accounts": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Flatten accounts",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Flatten accounts": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Read Brand Registry",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Read Brand Registry": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Diff new brands",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Diff new brands": {
+      "main": [
+        [
+          {
+            "node": "Has new brands?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has new brands?": {
+      "main": [
+        [
+          {
+            "node": "Append new brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append new brands": {
+      "main": [
+        [
+          {
+            "node": "Compose new-brand alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose new-brand alert": {
+      "main": [
+        [
+          {
+            "node": "Send new-brand alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Africa/Cairo"
+  },
+  "versionId": "60449843-2391-443a-aa24-21bfe774edcd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9df071be3540d8b54994d231aeb8bda34843d4fc0415c70e3399690bf7e7c6ec"
+  },
+  "nodeGroups": [],
+  "id": "V2qUILnV1xKcVQH2",
+  "tags": []
+}

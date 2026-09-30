@@ -1,0 +1,429 @@
+{
+  "name": "WF1bu Meta Ad-Level Daily Sync (All Brands)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "t1",
+      "name": "Manual Test",
+      "position": [
+        -304,
+        -96
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "15 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "t2",
+      "name": "Daily 06:15",
+      "position": [
+        -304,
+        112
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "id": "gs1",
+      "name": "Read Brand Registry",
+      "position": [
+        -64,
+        0
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.filter(i => (i.json.Status||'').toLowerCase()==='active' && i.json.Meta_Ad_Account_ID && i.json.Raw_Sheet_ID);"
+      },
+      "id": "code0",
+      "name": "Filter brands ready to sync",
+      "position": [
+        192,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "loop1",
+      "name": "Loop brands",
+      "position": [
+        432,
+        0
+      ],
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "const DAYS_BACK = 7;\nconst until = $today.minus({ days: 1 });\nconst since = until.minus({ days: DAYS_BACK - 1 });\nreturn [{ json: { since: since.toISODate(), until: until.toISODate(), time_range: JSON.stringify({ since: since.toISODate(), until: until.toISODate() }) } }];"
+      },
+      "id": "code1",
+      "name": "Date window (7d)",
+      "position": [
+        672,
+        -128
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v21.0/act_{{ $('Loop brands').item.json.Meta_Ad_Account_ID.toString().replace(/^act_/,'') }}/insights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "ad_id,ad_name,adset_name,campaign_name,spend,impressions,reach,frequency,cpm,unique_outbound_clicks,unique_outbound_clicks_ctr,outbound_clicks,actions,action_values,date_start,date_stop"
+            },
+            {
+              "name": "level",
+              "value": "ad"
+            },
+            {
+              "name": "time_increment",
+              "value": "1"
+            },
+            {
+              "name": "limit",
+              "value": "200"
+            },
+            {
+              "name": "time_range",
+              "value": "={{ $json.time_range }}"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {}
+        }
+      },
+      "alwaysOutputData": true,
+      "id": "http1",
+      "maxTries": 3,
+      "name": "Meta Ad-Level Insights",
+      "position": [
+        912,
+        -128
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "waitBetweenTries": 2000,
+      "notesInFlow": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qQUVSfCeWtFUWkkM",
+          "name": "Meta-Access Tokens"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "Paginates via paging.next. Uses the shared token; assumes partner access to every brand's ad account."
+    },
+    {
+      "parameters": {
+        "jsCode": "const CONFIG={purchase:['purchase','omni_purchase'],purchase_value:['purchase','omni_purchase'],atc:['add_to_cart','omni_add_to_cart'],ic:['initiate_checkout','omni_initiated_checkout'],lpv:['landing_page_view']};\nfunction num(v){if(v==null||v==='')return 0;const n=Number(v);return Number.isFinite(n)?n:0;}\nfunction actionSum(arr,types){if(!Array.isArray(arr))return 0;let t=0;for(const a of arr){if(types.includes(a.action_type))t+=num(a.value);}return t;}\nfunction outboundClicks(d){if(Array.isArray(d.unique_outbound_clicks))return actionSum(d.unique_outbound_clicks,['outbound_click']);return num(d.unique_outbound_clicks);}\nfunction outboundCtr(d,clicks,imps){if(Array.isArray(d.unique_outbound_clicks_ctr)){const hit=d.unique_outbound_clicks_ctr.find(x=>x.action_type==='outbound_click');return hit?num(hit.value):0;}if(d.unique_outbound_clicks_ctr!=null&&d.unique_outbound_clicks_ctr!=='')return num(d.unique_outbound_clicks_ctr);return imps?(clicks/imps)*100:0;}\nfunction creativeKey(adName){if(!adName)return '';let k=adName.toLowerCase();k=k.replace(/^\\s*(vid|pic|video|image)\\s*-\\s*/,'');k=k.replace(/^copy\\s*\\d*\\s*of\\s*/,'');return k.trim();}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nfunction flattenOne(d){const spend=num(d.spend),impressions=num(d.impressions),reach=num(d.reach);const frequency=num(d.frequency)||(reach?impressions/reach:0);const cpm=num(d.cpm)||(impressions?(spend/impressions)*1000:0);const clicks=outboundClicks(d);const ctr=outboundCtr(d,clicks,impressions);const lpv=actionSum(d.actions,CONFIG.lpv);const atc=actionSum(d.actions,CONFIG.atc);const ic=actionSum(d.actions,CONFIG.ic);const purchases=actionSum(d.actions,CONFIG.purchase);const purchasesValue=actionSum(d.action_values,CONFIG.purchase_value);const roas=spend?purchasesValue/spend:0;const aov=purchases?purchasesValue/purchases:0;const cvr=clicks?(purchases/clicks)*100:0;return{Date:d.date_start||d.date_stop||'',Ad_ID:d.ad_id||'',Ad_Name:d.ad_name||'',AdSet_Name:d.adset_name||'',Campaign_Name:d.campaign_name||'',Creative_Key:creativeKey(d.ad_name),Spend:round(spend,2),Impressions:impressions,Reach:reach,Frequency:round(frequency,2),CPM:round(cpm,2),Clicks:clicks,CTR_Pct:round(ctr,4),LPV:lpv,Adds_to_Cart:atc,Initiate_Checkout:ic,Purchases:purchases,Purchases_Value:round(purchasesValue,2),ROAS:round(roas,4),AOV:round(aov,2),Purchase_CVR_Pct:round(cvr,4),Pulled_At:new Date().toISOString()};}\nconst out=[];for(const item of items){const j=item.json;if(j&&j.error){out.push({json:{error:JSON.stringify(j.error)}});continue;}const rows=Array.isArray(j.data)?j.data:[];for(const row of rows){if(!row||(row.spend==null&&row.impressions==null&&!row.date_start))continue;out.push({json:flattenOne(row)});}}\nif(!out.length)return[{json:{error:'No ad-level insights rows returned'}}];\nreturn out;"
+      },
+      "id": "code2",
+      "name": "Flatten ad-level + creative key",
+      "position": [
+        1152,
+        -128
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "err",
+              "leftValue": "={{ $json.error }}",
+              "operator": {
+                "operation": "exists",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "if1",
+      "name": "Has error?",
+      "position": [
+        1392,
+        -128
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Loop brands').item.json.Raw_Sheet_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_Meta_Ads"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Date",
+            "Ad_ID"
+          ],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "gs2",
+      "name": "Upsert Daily_Raw_Meta_Ads",
+      "position": [
+        1632,
+        -208
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "sahersalama97@gmail.com",
+        "subject": "=Meta Ad-Level Daily Sync FAILED - {{ $('Loop brands').item.json.Brand_Name }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "em1",
+      "name": "Email failure alert",
+      "position": [
+        1632,
+        48
+      ],
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "webhookId": "9686f52a-281d-43e8-a46e-b8afa3579dd5",
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      },
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Read Brand Registry",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Daily 06:15": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Read Brand Registry",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Read Brand Registry": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Filter brands ready to sync",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Filter brands ready to sync": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Loop brands",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Loop brands": {
+      "main": [
+        [],
+        [
+          {
+            "index": 0,
+            "node": "Date window (7d)",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Date window (7d)": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Meta Ad-Level Insights",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Meta Ad-Level Insights": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Flatten ad-level + creative key",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Email failure alert",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Flatten ad-level + creative key": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Has error?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Has error?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Email failure alert",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Upsert Daily_Raw_Meta_Ads",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Upsert Daily_Raw_Meta_Ads": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Loop brands",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Email failure alert": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Loop brands",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Africa/Cairo"
+  },
+  "versionId": "4c587496-5f8f-4476-a29a-99539caf32ba",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9df071be3540d8b54994d231aeb8bda34843d4fc0415c70e3399690bf7e7c6ec"
+  },
+  "nodeGroups": [],
+  "id": "2UMUDfZMMuYXd3VG",
+  "tags": []
+}

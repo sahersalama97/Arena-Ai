@@ -1,0 +1,1211 @@
+{
+  "name": "ONE-OFF Template Prep (run once, then archive)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "t1",
+      "name": "Manual Test",
+      "position": [
+        -208,
+        0
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "title": "Daily_Raw_Meta",
+        "options": {}
+      },
+      "id": "add1",
+      "name": "Add Daily_Raw_Meta tab",
+      "position": [
+        48,
+        -320
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "title": "Daily_Raw_Meta_Ads",
+        "options": {}
+      },
+      "id": "add2",
+      "name": "Add Daily_Raw_Meta_Ads tab",
+      "position": [
+        288,
+        -320
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "title": "Daily_Raw_TikTok",
+        "options": {}
+      },
+      "id": "add3",
+      "name": "Add Daily_Raw_TikTok tab",
+      "position": [
+        528,
+        -320
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "title": "Daily_Raw_TikTok_Ads",
+        "options": {}
+      },
+      "id": "add4",
+      "name": "Add Daily_Raw_TikTok_Ads tab",
+      "position": [
+        768,
+        -320
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Overview"
+        },
+        "clear": "specificRange",
+        "range": "'Meta Overview'!A5:Z5000"
+      },
+      "id": "cl1",
+      "name": "Clear Meta Overview data",
+      "position": [
+        48,
+        80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Ad Performance"
+        },
+        "clear": "specificRange",
+        "range": "'Meta Ad Performance'!A5:Z5000"
+      },
+      "id": "cl2",
+      "name": "Clear Meta Ad Performance data",
+      "position": [
+        288,
+        80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Creatives Performance"
+        },
+        "clear": "specificRange",
+        "range": "'Meta Creatives Performance'!A5:Z5000"
+      },
+      "id": "cl3",
+      "name": "Clear Meta Creatives Performance data",
+      "position": [
+        528,
+        80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Weekly"
+        },
+        "clear": "specificRange",
+        "range": "'Meta Weekly'!A5:Z5000"
+      },
+      "id": "cl4",
+      "name": "Clear Meta Weekly data",
+      "position": [
+        768,
+        80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Overview"
+        },
+        "clear": "specificRange",
+        "range": "'TikTok Overview'!A4:Z5000"
+      },
+      "id": "cl5",
+      "name": "Clear TikTok Overview data",
+      "position": [
+        1008,
+        80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Ad Performance"
+        },
+        "clear": "specificRange",
+        "range": "'TikTok Ad Performance'!A5:Z5000"
+      },
+      "id": "cl6",
+      "name": "Clear TikTok Ad Performance data",
+      "position": [
+        1248,
+        80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Creatives Performance"
+        },
+        "clear": "specificRange",
+        "range": "'TikTok Creatives Performance'!A4:Z5000"
+      },
+      "id": "cl7",
+      "name": "Clear TikTok Creatives Performance data",
+      "position": [
+        1488,
+        80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Weekly"
+        },
+        "clear": "specificRange",
+        "range": "'TikTok Weekly'!A4:Z5000"
+      },
+      "id": "cl8",
+      "name": "Clear TikTok Weekly data",
+      "position": [
+        1728,
+        80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Combined"
+        },
+        "clear": "specificRange",
+        "range": "Combined!A5:Z5000"
+      },
+      "id": "cl9",
+      "name": "Clear Combined data",
+      "position": [
+        1968,
+        80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Overview"
+        }
+      },
+      "id": "delB1",
+      "name": "B: remove Meta Overview",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1008,
+        288
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Ad Performance"
+        }
+      },
+      "id": "delB2",
+      "name": "B: remove Meta Ad Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        288
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Creatives Performance"
+        }
+      },
+      "id": "delB3",
+      "name": "B: remove Meta Creatives Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1488,
+        288
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Weekly"
+        }
+      },
+      "id": "delB4",
+      "name": "B: remove Meta Weekly",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1728,
+        288
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Overview"
+        }
+      },
+      "id": "delB5",
+      "name": "B: remove TikTok Overview",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1968,
+        288
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Ad Performance"
+        }
+      },
+      "id": "delB6",
+      "name": "B: remove TikTok Ad Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2208,
+        288
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Creatives Performance"
+        }
+      },
+      "id": "delB7",
+      "name": "B: remove TikTok Creatives Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2448,
+        288
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Weekly"
+        }
+      },
+      "id": "delB8",
+      "name": "B: remove TikTok Weekly",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2688,
+        288
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Combined"
+        }
+      },
+      "id": "delB9",
+      "name": "B: remove Combined",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2928,
+        288
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_Meta"
+        },
+        "clear": "specificRange",
+        "range": "Daily_Raw_Meta!A1:Z10"
+      },
+      "id": "clhdr1",
+      "name": "Clear Daily_Raw_Meta (wrong header)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        48,
+        -224
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_Meta_Ads"
+        },
+        "clear": "specificRange",
+        "range": "Daily_Raw_Meta_Ads!A1:Z10"
+      },
+      "id": "clhdr2",
+      "name": "Clear Daily_Raw_Meta_Ads (wrong header)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        288,
+        -224
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok"
+        },
+        "clear": "specificRange",
+        "range": "Daily_Raw_TikTok!A1:Z10"
+      },
+      "id": "clhdr3",
+      "name": "Clear Daily_Raw_TikTok (wrong header)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        528,
+        -224
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok_Ads"
+        },
+        "clear": "specificRange",
+        "range": "Daily_Raw_TikTok_Ads!A1:Z10"
+      },
+      "id": "clhdr4",
+      "name": "Clear Daily_Raw_TikTok_Ads (wrong header)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        768,
+        -224
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs/values/{{ encodeURIComponent(\"'Daily_Raw_Meta'!A1\") }}?valueInputOption=RAW",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ values: [[\"Date\",\"Spend\",\"Impressions\",\"Reach\",\"Frequency\",\"CPM\",\"Clicks\",\"CTR_Pct\",\"Adds_to_Cart\",\"Initiate_Checkout\",\"Purchases\",\"Purchases_Value\",\"ROAS\",\"AOV\",\"Purchase_CVR_Pct\",\"Pulled_At\"]] }) }}",
+        "options": {}
+      },
+      "id": "hdr1b",
+      "name": "Header Daily_Raw_Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        48,
+        -128
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs/values/{{ encodeURIComponent(\"'Daily_Raw_Meta_Ads'!A1\") }}?valueInputOption=RAW",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ values: [[\"Date\",\"Ad_ID\",\"Ad_Name\",\"AdSet_Name\",\"Campaign_Name\",\"Creative_Key\",\"Spend\",\"Impressions\",\"Reach\",\"Frequency\",\"CPM\",\"Clicks\",\"CTR_Pct\",\"LPV\",\"Adds_to_Cart\",\"Initiate_Checkout\",\"Purchases\",\"Purchases_Value\",\"ROAS\",\"AOV\",\"Purchase_CVR_Pct\",\"Pulled_At\"]] }) }}",
+        "options": {}
+      },
+      "id": "hdr2b",
+      "name": "Header Daily_Raw_Meta_Ads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        288,
+        -128
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs/values/{{ encodeURIComponent(\"'Daily_Raw_TikTok'!A1\") }}?valueInputOption=RAW",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ values: [[\"Date\",\"Spend\",\"Impressions\",\"Reach\",\"CPM\",\"Clicks\",\"CTR_Pct\",\"Frequency\",\"Profile_Visits\",\"Follows\",\"Adds_to_Cart\",\"Initiate_Checkout\",\"Purchases\",\"Purchases_Value\",\"ROAS\",\"AOV\",\"Purchase_CVR_Pct\",\"Pulled_At\"]] }) }}",
+        "options": {}
+      },
+      "id": "hdr3b",
+      "name": "Header Daily_Raw_TikTok",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        528,
+        -128
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs/values/{{ encodeURIComponent(\"'Daily_Raw_TikTok_Ads'!A1\") }}?valueInputOption=RAW",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ values: [[\"Date\",\"Ad_ID\",\"Ad_Name\",\"Campaign_Name\",\"AdGroup_Name\",\"Creative_Key\",\"Spend\",\"Impressions\",\"Reach\",\"CPM\",\"Clicks\",\"CTR_Pct\",\"Profile_Visits\",\"Follows\",\"Adds_to_Cart\",\"Initiate_Checkout\",\"Purchases\",\"Purchases_Value\",\"ROAS\",\"AOV\",\"Purchase_CVR_Pct\",\"Pulled_At\"]] }) }}",
+        "options": {}
+      },
+      "id": "hdr4b",
+      "name": "Header Daily_Raw_TikTok_Ads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        768,
+        -128
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "rqsBKtQ08F7jiPT4",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Add Daily_Raw_Meta tab": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Add Daily_Raw_Meta_Ads tab",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Add Daily_Raw_Meta_Ads tab": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Add Daily_Raw_TikTok tab",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Add Daily_Raw_TikTok tab": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Add Daily_Raw_TikTok_Ads tab",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Clear Meta Overview data": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Clear Meta Ad Performance data",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Clear Meta Ad Performance data": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Clear Meta Creatives Performance data",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Clear Meta Creatives Performance data": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Clear Meta Weekly data",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Clear Meta Weekly data": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Clear TikTok Overview data",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Clear TikTok Overview data": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Clear TikTok Ad Performance data",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Clear TikTok Ad Performance data": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Clear TikTok Creatives Performance data",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Clear TikTok Creatives Performance data": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Clear TikTok Weekly data",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Clear TikTok Weekly data": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Clear Combined data",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "B: remove Meta Overview": {
+      "main": [
+        [
+          {
+            "node": "B: remove Meta Ad Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove Meta Ad Performance": {
+      "main": [
+        [
+          {
+            "node": "B: remove Meta Creatives Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove Meta Creatives Performance": {
+      "main": [
+        [
+          {
+            "node": "B: remove Meta Weekly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove Meta Weekly": {
+      "main": [
+        [
+          {
+            "node": "B: remove TikTok Overview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove TikTok Overview": {
+      "main": [
+        [
+          {
+            "node": "B: remove TikTok Ad Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove TikTok Ad Performance": {
+      "main": [
+        [
+          {
+            "node": "B: remove TikTok Creatives Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove TikTok Creatives Performance": {
+      "main": [
+        [
+          {
+            "node": "B: remove TikTok Weekly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove TikTok Weekly": {
+      "main": [
+        [
+          {
+            "node": "B: remove Combined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Clear Daily_Raw_Meta (wrong header)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Daily_Raw_Meta (wrong header)": {
+      "main": [
+        [
+          {
+            "node": "Header Daily_Raw_Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Header Daily_Raw_Meta": {
+      "main": [
+        [
+          {
+            "node": "Clear Daily_Raw_Meta_Ads (wrong header)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Daily_Raw_Meta_Ads (wrong header)": {
+      "main": [
+        [
+          {
+            "node": "Header Daily_Raw_Meta_Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Header Daily_Raw_Meta_Ads": {
+      "main": [
+        [
+          {
+            "node": "Clear Daily_Raw_TikTok (wrong header)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Daily_Raw_TikTok (wrong header)": {
+      "main": [
+        [
+          {
+            "node": "Header Daily_Raw_TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Header Daily_Raw_TikTok": {
+      "main": [
+        [
+          {
+            "node": "Clear Daily_Raw_TikTok_Ads (wrong header)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Daily_Raw_TikTok_Ads (wrong header)": {
+      "main": [
+        [
+          {
+            "node": "Header Daily_Raw_TikTok_Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Header Daily_Raw_TikTok_Ads": {
+      "main": [
+        [
+          {
+            "node": "Clear Meta Overview data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "06c9bf83-dad5-4ac8-9623-1045e4d9f7e8",
+  "meta": {
+    "instanceId": "9df071be3540d8b54994d231aeb8bda34843d4fc0415c70e3399690bf7e7c6ec"
+  },
+  "nodeGroups": [],
+  "id": "XRp18TmrLCp4UsPb",
+  "tags": []
+}
