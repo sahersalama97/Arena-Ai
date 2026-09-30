@@ -342,7 +342,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const brand = $('Loop brands').item.json;\nconst monthKey = $today.toFormat('yyyy-MM');\nconst monthLabel = $today.toFormat('LLLL yyyy');\nconst expectedTitle = `${brand.Brand_Name} - Ads Report - ${monthLabel}`;\nconst needsNewReportSheet = !brand.Current_Month_Report_Sheet_ID || brand.Current_Month_Report_Month !== monthKey;\nreturn [{ json: { Brand_Name: brand.Brand_Name, ExpectedTitle: expectedTitle, MonthKey: monthKey, NeedsNewReportSheet: needsNewReportSheet } }];"
+        "jsCode": "const brand = $('Loop brands').item.json;\nconst monthKey = $today.toFormat('yyyy-MM');\nconst monthLabel = $today.toFormat('LLLL yyyy');\nconst expectedTitle = `${brand.Brand_Name} - Ads Report - ${monthLabel}`;\nconst storedMonth = brand.Current_Month_Report_Month || '';\n// If the registry does not yet have Current_Month_Report_Month, do not create\n// a new blank report every day; keep the existing current report sheet.\nconst needsNewReportSheet = !brand.Current_Month_Report_Sheet_ID || (!!storedMonth && storedMonth !== monthKey);\nreturn [{ json: { Brand_Name: brand.Brand_Name, ExpectedTitle: expectedTitle, MonthKey: monthKey, NeedsNewReportSheet: needsNewReportSheet } }];"
       },
       "id": "code2",
       "name": "Compute expected report title",
