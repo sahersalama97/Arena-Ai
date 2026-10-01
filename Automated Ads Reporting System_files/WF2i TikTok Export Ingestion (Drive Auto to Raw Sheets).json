@@ -378,8 +378,8 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Loop brands').item.json.Raw_Sheet_ID }}"
+          "mode": "url",
+          "value": "={{ 'https://docs.google.com/spreadsheets/d/' + $('Build Drive Search Query').first().json.Raw_Sheet_ID + '/edit' }}"
         },
         "sheetName": {
           "__rl": true,
@@ -411,7 +411,8 @@
           "id": "HBrhYwOa6DITasss",
           "name": "Google Sheets account 2"
         }
-      }
+      },
+      "notes": "Uses the current brand Raw_Sheet_ID from Build Drive Search Query via .first(), not Loop brands .item, so the document stays defined after the XLSX extract creates multiple row items."
     },
     {
       "parameters": {
@@ -491,8 +492,8 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "mode": "id",
-          "value": "={{ $('Loop brands').item.json.Raw_Sheet_ID }}"
+          "mode": "url",
+          "value": "={{ 'https://docs.google.com/spreadsheets/d/' + $('Build Drive Search Query').first().json.Raw_Sheet_ID + '/edit' }}"
         },
         "sheetName": {
           "__rl": true,
@@ -525,7 +526,8 @@
           "id": "HBrhYwOa6DITasss",
           "name": "Google Sheets account 2"
         }
-      }
+      },
+      "notes": "Uses the current brand Raw_Sheet_ID from Build Drive Search Query via .first(), not Loop brands .item, so the document stays defined after the XLSX extract creates multiple row items."
     },
     {
       "parameters": {
