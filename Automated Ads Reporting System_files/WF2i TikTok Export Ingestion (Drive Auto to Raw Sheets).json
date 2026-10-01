@@ -1,0 +1,868 @@
+{
+  "name": "WF2i TikTok Export Ingestion (Drive Auto to Raw Sheets)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual_test_9e120afa",
+      "name": "Manual Test",
+      "position": [
+        -760,
+        -120
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "weekly_trigg_bea19e08",
+      "name": "Weekly Trigger",
+      "position": [
+        -760,
+        80
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "notes": "Runs every Monday 09:00 and ingests the latest TikTok export file for the previous complete week."
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 1 * *"
+            }
+          ]
+        }
+      },
+      "id": "monthly_trig_1205515d",
+      "name": "Monthly Trigger",
+      "position": [
+        -760,
+        280
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "notes": "Runs on the first day of the month. It ingests the latest TikTok export file it finds for each brand."
+    },
+    {
+      "parameters": {
+        "jsCode": "const start = $today.startOf('month');\nconst end0 = $today.minus({days:1});\nconst end = end0 < start ? start : end0;\nconst label = start.toFormat('MMM d') + ' - ' + end.toFormat('MMM d, yyyy') + ' (Month-to-Date)';\nreturn [{json:{periodStart:start.toISODate(), periodEnd:end.toISODate(), periodLabel:label, periodType:'month_to_date'}}];"
+      },
+      "id": "compute_peri_58ebb2e9",
+      "name": "Compute Period (Current Month)",
+      "position": [
+        -500,
+        -120
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const start = $today.startOf('week').minus({weeks:1});\nconst end = start.plus({days:6});\nconst label = start.toFormat('MMM d') + ' - ' + end.toFormat('MMM d, yyyy') + ' (Weekly)';\nreturn [{json:{periodStart:start.toISODate(), periodEnd:end.toISODate(), periodLabel:label, periodType:'weekly'}}];"
+      },
+      "id": "compute_peri_be4757be",
+      "name": "Compute Period (Last Full Week)",
+      "position": [
+        -500,
+        80
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const start = $today.startOf('month').minus({months:1});\nconst end = $today.startOf('month').minus({days:1});\nconst label = start.toFormat('MMMM yyyy') + ' (Monthly)';\nreturn [{json:{periodStart:start.toISODate(), periodEnd:end.toISODate(), periodLabel:label, periodType:'monthly'}}];"
+      },
+      "id": "compute_peri_908e3cfa",
+      "name": "Compute Period (Previous Month)",
+      "position": [
+        -500,
+        280
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {},
+      "id": "set_period_5bce61c6",
+      "name": "Set Period",
+      "position": [
+        -260,
+        80
+      ],
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "options": {}
+      },
+      "id": "read_brand_r_e04fb29c",
+      "name": "Read Brand Registry",
+      "position": [
+        -20,
+        80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.filter(i => {\n  const j=i.json||{};\n  const status=String(j.Status||'').toLowerCase();\n  const platform=String(j.Platform||'').toLowerCase();\n  // Raw_Sheet_ID is required. TikTok_Advertiser_ID is preferred but not required for file ingestion.\n  return status==='active' && j.Raw_Sheet_ID && (j.TikTok_Advertiser_ID || platform.includes('tiktok') || j.TikTok_Export_Folder_ID || j.TikTok_Drive_Folder_ID);\n});"
+      },
+      "id": "filter_brand_64e2a5f8",
+      "name": "Filter brands ready for TikTok export ingestion",
+      "position": [
+        240,
+        80
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "loop_brands_6b67b640",
+      "name": "Loop brands",
+      "position": [
+        500,
+        80
+      ],
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "const brand = $('Loop brands').item.json;\nconst period = $('Set Period').first().json;\nfunction esc(s){return String(s||'').replace(/\\\\/g,'\\\\\\\\').replace(/'/g,\"\\\\'\");}\nconst brandName = brand.Brand_Name || brand.name || '';\nconst folderId = brand.TikTok_Export_Folder_ID || brand.TikTok_Drive_Folder_ID || brand.Export_Folder_ID || '';\nlet q = \"trashed = false\";\nq += \" and (mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' or mimeType = 'application/vnd.ms-excel' or mimeType = 'text/csv' or mimeType = 'application/vnd.google-apps.spreadsheet')\";\nif (folderId) q += ` and '${esc(folderId)}' in parents`;\nif (brandName) q += ` and name contains '${esc(brandName)}'`;\nq += \" and (name contains 'TikTok' or name contains 'Tiktok' or name contains 'tiktok')\";\nreturn [{ json: { ...brand, ...period, driveQuery: q, exportFolderId: folderId, expectedFileName: `${brandName} TikTok export`, Pulled_At: new Date().toISOString() } }];"
+      },
+      "id": "build_drive__e87403e3",
+      "name": "Build Drive Search Query",
+      "position": [
+        760,
+        80
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ $json.driveQuery }}",
+        "returnAll": true,
+        "filter": {},
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "modifiedTime",
+            "webViewLink"
+          ]
+        }
+      },
+      "id": "find_latest__c8d5a96a",
+      "name": "Find Latest TikTok Export in Drive",
+      "position": [
+        1020,
+        80
+      ],
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5KJlnp3mTAKGBAdb",
+          "name": "Google Drive account 2"
+        }
+      },
+      "alwaysOutputData": true,
+      "notes": "Searches Drive automatically. To limit search, add TikTok_Export_Folder_ID or TikTok_Drive_Folder_ID to the Brand Registry row."
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Build Drive Search Query').first().json;\nconst files = items.map(i => i.json || {}).filter(f => f.id && f.name);\nif (!files.length) {\n  return [{ json: { ...ctx, skip: true, error: `No TikTok export file found in Drive for ${ctx.Brand_Name}. Query: ${ctx.driveQuery}` } }];\n}\nfiles.sort((a,b) => new Date(b.modifiedTime || 0) - new Date(a.modifiedTime || 0));\nconst f = files[0];\nreturn [{ json: { ...ctx, exportFileId: f.id, exportFileName: f.name, exportMimeType: f.mimeType, exportModifiedTime: f.modifiedTime, exportUrl: f.webViewLink, skip: false } }];"
+      },
+      "id": "pick_newest__7d7f1980",
+      "name": "Pick newest export file",
+      "position": [
+        1280,
+        80
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "hasFile",
+              "leftValue": "={{ $json.exportFileId }}",
+              "operator": {
+                "operation": "exists",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "has_export_f_8a1b1455",
+      "name": "Has export file?",
+      "position": [
+        1520,
+        80
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "sahersalama97@gmail.com",
+        "subject": "=TikTok export file not found - {{ $json.Brand_Name }}",
+        "html": "={{ $json.error }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "email_missin_ccc19906",
+      "name": "Email missing export alert",
+      "position": [
+        1770,
+        250
+      ],
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.exportFileId }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "id": "download_exp_397b2e4b",
+      "name": "Download export file",
+      "position": [
+        1770,
+        0
+      ],
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5KJlnp3mTAKGBAdb",
+          "name": "Google Drive account 2"
+        }
+      },
+      "notes": "If the file is a native Google Sheet, set Google File Conversion to XLSX in this node if your n8n UI asks for it."
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "data",
+        "options": {
+          "headerRow": true,
+          "rawData": false
+        }
+      },
+      "id": "extract_tikt_012881e3",
+      "name": "Extract TikTok XLSX/CSV",
+      "position": [
+        2020,
+        0
+      ],
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "notes": "Parses the downloaded TikTok export. If your exports are CSV, change Operation to Extract From CSV."
+    },
+    {
+      "parameters": {
+        "jsCode": "function cleanKey(k){return String(k||'').toLowerCase().replace(/[%()]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');}\nfunction pick(row, aliases){\n  const map={};\n  for(const [k,v] of Object.entries(row||{})) map[cleanKey(k)] = v;\n  for(const a of aliases){const key=cleanKey(a); if(map[key]!==undefined && map[key]!==null && map[key] !== '') return map[key];}\n  return '';\n}\nfunction num(v){\n  if(v==null||v==='')return 0;\n  if(typeof v==='number') return Number.isFinite(v)?v:0;\n  let s=String(v).trim();\n  if(!s || s==='-' || s==='--') return 0;\n  const pct=s.includes('%');\n  s=s.replace(/,/g,'').replace(/EGP|USD|EUR|GBP|ج\\.م|جنيه/gi,'').replace(/%/g,'').trim();\n  const n=Number(s);\n  return Number.isFinite(n)?n:0;\n}\nfunction round(n,p){const f=10**p;return Math.round((Number(n)||0)*f)/f;}\nfunction dateVal(v){\n  if(v==null||v==='')return '';\n  if(typeof v==='number' || (/^\\d+(\\.\\d+)?$/.test(String(v).trim()) && Number(v)>30000)) return new Date((Number(v)-25569)*86400*1000).toISOString().slice(0,10);\n  const s=String(v).trim();\n  if(/^\\d{4}-\\d{2}-\\d{2}/.test(s)) return s.slice(0,10);\n  const fmts=['M/d/yyyy','M/d/yy','MM/dd/yyyy','d/M/yyyy','d/M/yy','dd/MM/yyyy','MMM d, yyyy','MMMM d, yyyy'];\n  for(const f of fmts){const dt=DateTime.fromFormat(s,f); if(dt.isValid) return dt.toISODate();}\n  const dt=DateTime.fromISO(s); return dt.isValid ? dt.toISODate() : '';\n}\nfunction creativeKey(adName){if(!adName)return '';let k=String(adName).toLowerCase();k=k.replace(/^\\s*(vid|pic|video|image)\\s*-\\s*/,'');k=k.replace(/^copy\\s*\\d*\\s*of\\s*/,'');return k.trim();}\nfunction normalizeSourceRows(){\n  return $('Extract TikTok XLSX/CSV').all().map(i=>i.json||{}).filter(r=>Object.values(r).some(v=>v!==''&&v!=null));\n}\nfunction adRecord(r){\n  const date=dateVal(pick(r,['Date','Day','By Day','Time','Stat Time Day','stat_time_day','Reporting starts','Start Date']));\n  const adName=pick(r,['Ad Name','Ad name','ad_name','Ad','Ad text']);\n  const adId=String(pick(r,['Ad ID','Ad id','ad_id','Ad ID (External)','ID']) || adName || '').trim();\n  const campaign=pick(r,['Campaign Name','Campaign name','campaign_name','Campaign']);\n  const adgroup=pick(r,['Ad Group Name','Ad group name','AdGroup Name','adgroup_name','Ad Group','Ad set name']);\n  const spend=num(pick(r,['Spend','Cost','Amount spent','Amount Spent','Total Cost']));\n  const impressions=num(pick(r,['Impressions','Impression']));\n  const reach=num(pick(r,['Reach','Unique Reach','People Reached']));\n  const clicks=num(pick(r,['Clicks','Click','Destination Clicks','Link Clicks']));\n  const cpmRaw=num(pick(r,['CPM','Cost per 1,000 impressions']));\n  const ctrRaw=num(pick(r,['CTR','CTR %','Click-through rate','Click Through Rate']));\n  const profileVisits=num(pick(r,['Profile Visits','Profile visits','Paid Profile Visits']));\n  const follows=num(pick(r,['Follows','Paid Follows','Followers']));\n  const atc=num(pick(r,['Adds to Cart','Add to Cart','Add To Cart','ATC','Onsite Shopping Add To Cart','onsite_shopping_add_to_cart']));\n  const ic=num(pick(r,['Initiate Checkout','Checkout','Checkout Initiated','Checkouts Initiated','IC','Onsite Shopping Initiate Checkout Count','onsite_shopping_initiate_checkout_count']));\n  const purchases=num(pick(r,['Purchases','Purchase','Orders','Conversions','Onsite Shopping Purchase','onsite_shopping_purchase']));\n  const purchaseValue=num(pick(r,['Purchases Value','Purchase Value','Purchase value','Revenue','Total Purchase Value','Onsite Shopping Purchase Value','onsite_shopping_purchase_value','Gross Revenue']));\n  const cpm=cpmRaw || (impressions ? (spend/impressions)*1000 : 0);\n  const ctr=ctrRaw || (impressions ? (clicks/impressions)*100 : 0);\n  return {Date:date,Ad_ID:adId,Ad_Name:adName,Campaign_Name:campaign,AdGroup_Name:adgroup,Creative_Key:creativeKey(adName),Spend:round(spend,2),Impressions:impressions,Reach:reach,CPM:round(cpm,2),Clicks:clicks,CTR_Pct:round(ctr,4),Profile_Visits:profileVisits,Follows:follows,Adds_to_Cart:atc,Initiate_Checkout:ic,Purchases:purchases,Purchases_Value:round(purchaseValue,2),ROAS:round(spend?purchaseValue/spend:0,4),AOV:round(purchases?purchaseValue/purchases:0,2),Purchase_CVR_Pct:round(clicks?(purchases/clicks)*100:0,4),Pulled_At:new Date().toISOString()};\n}const records = normalizeSourceRows().map(adRecord).filter(r=>r.Date && (r.Spend || r.Impressions || r.Clicks || r.Purchases || r.Purchases_Value));\nconst groups={};\nfor(const r of records){\n  if(!groups[r.Date]) groups[r.Date]={Date:r.Date,Spend:0,Impressions:0,Reach:0,Clicks:0,Profile_Visits:0,Follows:0,Adds_to_Cart:0,Initiate_Checkout:0,Purchases:0,Purchases_Value:0};\n  const g=groups[r.Date];\n  g.Spend+=num(r.Spend); g.Impressions+=num(r.Impressions); g.Reach+=num(r.Reach); g.Clicks+=num(r.Clicks); g.Profile_Visits+=num(r.Profile_Visits); g.Follows+=num(r.Follows); g.Adds_to_Cart+=num(r.Adds_to_Cart); g.Initiate_Checkout+=num(r.Initiate_Checkout); g.Purchases+=num(r.Purchases); g.Purchases_Value+=num(r.Purchases_Value);\n}\nconst out=Object.values(groups).sort((a,b)=>a.Date.localeCompare(b.Date)).map(g=>({json:{Date:g.Date,Spend:round(g.Spend,2),Impressions:g.Impressions,Reach:g.Reach,CPM:round(g.Impressions?(g.Spend/g.Impressions)*1000:0,2),Clicks:g.Clicks,CTR_Pct:round(g.Impressions?(g.Clicks/g.Impressions)*100:0,4),Frequency:round(g.Reach?g.Impressions/g.Reach:0,2),Profile_Visits:g.Profile_Visits,Follows:g.Follows,Adds_to_Cart:g.Adds_to_Cart,Initiate_Checkout:g.Initiate_Checkout,Purchases:g.Purchases,Purchases_Value:round(g.Purchases_Value,2),ROAS:round(g.Spend?g.Purchases_Value/g.Spend:0,4),AOV:round(g.Purchases?g.Purchases_Value/g.Purchases:0,2),Purchase_CVR_Pct:round(g.Clicks?(g.Purchases/g.Clicks)*100:0,4),Pulled_At:new Date().toISOString()}}));\nif(!out.length) return [{json:{error:'No TikTok account rows parsed from export '+($('Pick newest export file').first().json.exportFileName||'')}}];\nreturn out;"
+      },
+      "id": "normalize_ac_ca35c241",
+      "name": "Normalize account daily rows",
+      "position": [
+        2280,
+        -120
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "err",
+              "leftValue": "={{ $json.error }}",
+              "operator": {
+                "operation": "exists",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "has_parsed_a_ef52876c",
+      "name": "Has parsed account rows?",
+      "position": [
+        2520,
+        -120
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Loop brands').item.json.Raw_Sheet_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok"
+        },
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "Date"
+          ],
+          "schema": [],
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "upsert_daily_29b020ea",
+      "name": "Upsert Daily_Raw_TikTok",
+      "position": [
+        2760,
+        -220
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "sahersalama97@gmail.com",
+        "subject": "=TikTok export parse failed - {{ $(\"Loop brands\").item.json.Brand_Name }}",
+        "html": "={{ $json.error }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "email_parse__86faed5b",
+      "name": "Email parse failure alert",
+      "position": [
+        2760,
+        20
+      ],
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "function cleanKey(k){return String(k||'').toLowerCase().replace(/[%()]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');}\nfunction pick(row, aliases){\n  const map={};\n  for(const [k,v] of Object.entries(row||{})) map[cleanKey(k)] = v;\n  for(const a of aliases){const key=cleanKey(a); if(map[key]!==undefined && map[key]!==null && map[key] !== '') return map[key];}\n  return '';\n}\nfunction num(v){\n  if(v==null||v==='')return 0;\n  if(typeof v==='number') return Number.isFinite(v)?v:0;\n  let s=String(v).trim();\n  if(!s || s==='-' || s==='--') return 0;\n  const pct=s.includes('%');\n  s=s.replace(/,/g,'').replace(/EGP|USD|EUR|GBP|ج\\.م|جنيه/gi,'').replace(/%/g,'').trim();\n  const n=Number(s);\n  return Number.isFinite(n)?n:0;\n}\nfunction round(n,p){const f=10**p;return Math.round((Number(n)||0)*f)/f;}\nfunction dateVal(v){\n  if(v==null||v==='')return '';\n  if(typeof v==='number' || (/^\\d+(\\.\\d+)?$/.test(String(v).trim()) && Number(v)>30000)) return new Date((Number(v)-25569)*86400*1000).toISOString().slice(0,10);\n  const s=String(v).trim();\n  if(/^\\d{4}-\\d{2}-\\d{2}/.test(s)) return s.slice(0,10);\n  const fmts=['M/d/yyyy','M/d/yy','MM/dd/yyyy','d/M/yyyy','d/M/yy','dd/MM/yyyy','MMM d, yyyy','MMMM d, yyyy'];\n  for(const f of fmts){const dt=DateTime.fromFormat(s,f); if(dt.isValid) return dt.toISODate();}\n  const dt=DateTime.fromISO(s); return dt.isValid ? dt.toISODate() : '';\n}\nfunction creativeKey(adName){if(!adName)return '';let k=String(adName).toLowerCase();k=k.replace(/^\\s*(vid|pic|video|image)\\s*-\\s*/,'');k=k.replace(/^copy\\s*\\d*\\s*of\\s*/,'');return k.trim();}\nfunction normalizeSourceRows(){\n  return $('Extract TikTok XLSX/CSV').all().map(i=>i.json||{}).filter(r=>Object.values(r).some(v=>v!==''&&v!=null));\n}\nfunction adRecord(r){\n  const date=dateVal(pick(r,['Date','Day','By Day','Time','Stat Time Day','stat_time_day','Reporting starts','Start Date']));\n  const adName=pick(r,['Ad Name','Ad name','ad_name','Ad','Ad text']);\n  const adId=String(pick(r,['Ad ID','Ad id','ad_id','Ad ID (External)','ID']) || adName || '').trim();\n  const campaign=pick(r,['Campaign Name','Campaign name','campaign_name','Campaign']);\n  const adgroup=pick(r,['Ad Group Name','Ad group name','AdGroup Name','adgroup_name','Ad Group','Ad set name']);\n  const spend=num(pick(r,['Spend','Cost','Amount spent','Amount Spent','Total Cost']));\n  const impressions=num(pick(r,['Impressions','Impression']));\n  const reach=num(pick(r,['Reach','Unique Reach','People Reached']));\n  const clicks=num(pick(r,['Clicks','Click','Destination Clicks','Link Clicks']));\n  const cpmRaw=num(pick(r,['CPM','Cost per 1,000 impressions']));\n  const ctrRaw=num(pick(r,['CTR','CTR %','Click-through rate','Click Through Rate']));\n  const profileVisits=num(pick(r,['Profile Visits','Profile visits','Paid Profile Visits']));\n  const follows=num(pick(r,['Follows','Paid Follows','Followers']));\n  const atc=num(pick(r,['Adds to Cart','Add to Cart','Add To Cart','ATC','Onsite Shopping Add To Cart','onsite_shopping_add_to_cart']));\n  const ic=num(pick(r,['Initiate Checkout','Checkout','Checkout Initiated','Checkouts Initiated','IC','Onsite Shopping Initiate Checkout Count','onsite_shopping_initiate_checkout_count']));\n  const purchases=num(pick(r,['Purchases','Purchase','Orders','Conversions','Onsite Shopping Purchase','onsite_shopping_purchase']));\n  const purchaseValue=num(pick(r,['Purchases Value','Purchase Value','Purchase value','Revenue','Total Purchase Value','Onsite Shopping Purchase Value','onsite_shopping_purchase_value','Gross Revenue']));\n  const cpm=cpmRaw || (impressions ? (spend/impressions)*1000 : 0);\n  const ctr=ctrRaw || (impressions ? (clicks/impressions)*100 : 0);\n  return {Date:date,Ad_ID:adId,Ad_Name:adName,Campaign_Name:campaign,AdGroup_Name:adgroup,Creative_Key:creativeKey(adName),Spend:round(spend,2),Impressions:impressions,Reach:reach,CPM:round(cpm,2),Clicks:clicks,CTR_Pct:round(ctr,4),Profile_Visits:profileVisits,Follows:follows,Adds_to_Cart:atc,Initiate_Checkout:ic,Purchases:purchases,Purchases_Value:round(purchaseValue,2),ROAS:round(spend?purchaseValue/spend:0,4),AOV:round(purchases?purchaseValue/purchases:0,2),Purchase_CVR_Pct:round(clicks?(purchases/clicks)*100:0,4),Pulled_At:new Date().toISOString()};\n}const records = normalizeSourceRows().map(adRecord).filter(r=>r.Date && (r.Ad_ID || r.Ad_Name) && (r.Spend || r.Impressions || r.Clicks || r.Purchases || r.Purchases_Value));\nconst out=records.map(r=>({json:r}));\nif(!out.length) return [{json:{error:'No TikTok ad rows parsed from export '+($('Pick newest export file').first().json.exportFileName||'')}}];\nreturn out;"
+      },
+      "id": "normalize_ad_372db864",
+      "name": "Normalize ad daily rows",
+      "position": [
+        3000,
+        -220
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "err",
+              "leftValue": "={{ $json.error }}",
+              "operator": {
+                "operation": "exists",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "has_parsed_a_06b9059d",
+      "name": "Has parsed ad rows?",
+      "position": [
+        3240,
+        -220
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Loop brands').item.json.Raw_Sheet_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok_Ads"
+        },
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "Date",
+            "Ad_ID"
+          ],
+          "schema": [],
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "upsert_daily_0a006be0",
+      "name": "Upsert Daily_Raw_TikTok_Ads",
+      "position": [
+        3480,
+        -320
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "sahersalama97@gmail.com",
+        "subject": "=TikTok ad export parse failed - {{ $(\"Loop brands\").item.json.Brand_Name }}",
+        "html": "={{ $json.error }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "email_ad_par_76ccf1c0",
+      "name": "Email ad parse failure alert",
+      "position": [
+        3480,
+        -100
+      ],
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Compute Period (Current Month)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Trigger": {
+      "main": [
+        [
+          {
+            "node": "Compute Period (Last Full Week)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monthly Trigger": {
+      "main": [
+        [
+          {
+            "node": "Compute Period (Previous Month)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Period (Current Month)": {
+      "main": [
+        [
+          {
+            "node": "Set Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Period (Last Full Week)": {
+      "main": [
+        [
+          {
+            "node": "Set Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Period (Previous Month)": {
+      "main": [
+        [
+          {
+            "node": "Set Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Period": {
+      "main": [
+        [
+          {
+            "node": "Read Brand Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Brand Registry": {
+      "main": [
+        [
+          {
+            "node": "Filter brands ready for TikTok export ingestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter brands ready for TikTok export ingestion": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop brands": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Build Drive Search Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Drive Search Query": {
+      "main": [
+        [
+          {
+            "node": "Find Latest TikTok Export in Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Latest TikTok Export in Drive": {
+      "main": [
+        [
+          {
+            "node": "Pick newest export file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick newest export file": {
+      "main": [
+        [
+          {
+            "node": "Has export file?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has export file?": {
+      "main": [
+        [
+          {
+            "node": "Download export file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email missing export alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email missing export alert": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download export file": {
+      "main": [
+        [
+          {
+            "node": "Extract TikTok XLSX/CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract TikTok XLSX/CSV": {
+      "main": [
+        [
+          {
+            "node": "Normalize account daily rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize account daily rows": {
+      "main": [
+        [
+          {
+            "node": "Has parsed account rows?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has parsed account rows?": {
+      "main": [
+        [
+          {
+            "node": "Email parse failure alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upsert Daily_Raw_TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email parse failure alert": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Daily_Raw_TikTok": {
+      "main": [
+        [
+          {
+            "node": "Normalize ad daily rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize ad daily rows": {
+      "main": [
+        [
+          {
+            "node": "Has parsed ad rows?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has parsed ad rows?": {
+      "main": [
+        [
+          {
+            "node": "Email ad parse failure alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upsert Daily_Raw_TikTok_Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email ad parse failure alert": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Daily_Raw_TikTok_Ads": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "938427d9-ab9c-4c6d-8cfa-335d084e7d6f",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "id": "WF2i_TikTok_Drive_Auto",
+  "tags": []
+}
