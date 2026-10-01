@@ -387,14 +387,214 @@
           "value": "Daily_Raw_TikTok"
         },
         "columns": {
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false,
-          "mappingMode": "autoMapInputData",
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={ $json.Date }",
+            "Spend": "={ $json.Spend }",
+            "Impressions": "={ $json.Impressions }",
+            "Reach": "={ $json.Reach }",
+            "CPM": "={ $json.CPM }",
+            "Clicks": "={ $json.Clicks }",
+            "CTR_Pct": "={ $json.CTR_Pct }",
+            "Frequency": "={ $json.Frequency }",
+            "Profile_Visits": "={ $json.Profile_Visits }",
+            "Follows": "={ $json.Follows }",
+            "Adds_to_Cart": "={ $json.Adds_to_Cart }",
+            "Initiate_Checkout": "={ $json.Initiate_Checkout }",
+            "Purchases": "={ $json.Purchases }",
+            "Purchases_Value": "={ $json.Purchases_Value }",
+            "ROAS": "={ $json.ROAS }",
+            "AOV": "={ $json.AOV }",
+            "Purchase_CVR_Pct": "={ $json.Purchase_CVR_Pct }",
+            "Pulled_At": "={ $json.Pulled_At }"
+          },
           "matchingColumns": [
             "Date"
           ],
-          "schema": [],
-          "value": {}
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Spend",
+              "displayName": "Spend",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Impressions",
+              "displayName": "Impressions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reach",
+              "displayName": "Reach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CPM",
+              "displayName": "CPM",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Clicks",
+              "displayName": "Clicks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CTR_Pct",
+              "displayName": "CTR_Pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Frequency",
+              "displayName": "Frequency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Profile_Visits",
+              "displayName": "Profile_Visits",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Follows",
+              "displayName": "Follows",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Adds_to_Cart",
+              "displayName": "Adds_to_Cart",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Initiate_Checkout",
+              "displayName": "Initiate_Checkout",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Purchases",
+              "displayName": "Purchases",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Purchases_Value",
+              "displayName": "Purchases_Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ROAS",
+              "displayName": "ROAS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AOV",
+              "displayName": "AOV",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Purchase_CVR_Pct",
+              "displayName": "Purchase_CVR_Pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pulled_At",
+              "displayName": "Pulled_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         },
         "options": {}
       },
@@ -412,7 +612,7 @@
           "name": "Google Sheets account 2"
         }
       },
-      "notes": "Uses the current brand Raw_Sheet_ID from Build Drive Search Query via .first(), not Loop brands .item, so the document stays defined after the XLSX extract creates multiple row items."
+      "notes": "Manual column mapping is defined in the workflow JSON and matchingColumns is set, so Append or Update Row works even when the sheet/document is dynamic."
     },
     {
       "parameters": {
@@ -501,15 +701,259 @@
           "value": "Daily_Raw_TikTok_Ads"
         },
         "columns": {
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false,
-          "mappingMode": "autoMapInputData",
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={ $json.Date }",
+            "Ad_ID": "={ $json.Ad_ID }",
+            "Ad_Name": "={ $json.Ad_Name }",
+            "Campaign_Name": "={ $json.Campaign_Name }",
+            "AdGroup_Name": "={ $json.AdGroup_Name }",
+            "Creative_Key": "={ $json.Creative_Key }",
+            "Spend": "={ $json.Spend }",
+            "Impressions": "={ $json.Impressions }",
+            "Reach": "={ $json.Reach }",
+            "CPM": "={ $json.CPM }",
+            "Clicks": "={ $json.Clicks }",
+            "CTR_Pct": "={ $json.CTR_Pct }",
+            "Profile_Visits": "={ $json.Profile_Visits }",
+            "Follows": "={ $json.Follows }",
+            "Adds_to_Cart": "={ $json.Adds_to_Cart }",
+            "Initiate_Checkout": "={ $json.Initiate_Checkout }",
+            "Purchases": "={ $json.Purchases }",
+            "Purchases_Value": "={ $json.Purchases_Value }",
+            "ROAS": "={ $json.ROAS }",
+            "AOV": "={ $json.AOV }",
+            "Purchase_CVR_Pct": "={ $json.Purchase_CVR_Pct }",
+            "Pulled_At": "={ $json.Pulled_At }"
+          },
           "matchingColumns": [
             "Date",
             "Ad_ID"
           ],
-          "schema": [],
-          "value": {}
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ad_ID",
+              "displayName": "Ad_ID",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ad_Name",
+              "displayName": "Ad_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Campaign_Name",
+              "displayName": "Campaign_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AdGroup_Name",
+              "displayName": "AdGroup_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Creative_Key",
+              "displayName": "Creative_Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Spend",
+              "displayName": "Spend",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Impressions",
+              "displayName": "Impressions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reach",
+              "displayName": "Reach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CPM",
+              "displayName": "CPM",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Clicks",
+              "displayName": "Clicks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CTR_Pct",
+              "displayName": "CTR_Pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Profile_Visits",
+              "displayName": "Profile_Visits",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Follows",
+              "displayName": "Follows",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Adds_to_Cart",
+              "displayName": "Adds_to_Cart",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Initiate_Checkout",
+              "displayName": "Initiate_Checkout",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Purchases",
+              "displayName": "Purchases",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Purchases_Value",
+              "displayName": "Purchases_Value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ROAS",
+              "displayName": "ROAS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AOV",
+              "displayName": "AOV",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Purchase_CVR_Pct",
+              "displayName": "Purchase_CVR_Pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pulled_At",
+              "displayName": "Pulled_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         },
         "options": {}
       },
@@ -527,7 +971,7 @@
           "name": "Google Sheets account 2"
         }
       },
-      "notes": "Uses the current brand Raw_Sheet_ID from Build Drive Search Query via .first(), not Loop brands .item, so the document stays defined after the XLSX extract creates multiple row items."
+      "notes": "Manual column mapping is defined in the workflow JSON and matchingColumns is set, so Append or Update Row works even when the sheet/document is dynamic."
     },
     {
       "parameters": {
