@@ -122,21 +122,123 @@
     },
     {
       "parameters": {
-        "operation": "toJson",
-        "binaryPropertyName": "data",
-        "options": {
-          "headerRow": true,
-          "includeEmptyRows": false
-        }
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "is_csv",
+              "leftValue": "={{ $binary.data.fileExtension || \"\" }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "csv"
+            }
+          ],
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
       },
-      "id": "spreadsheet",
-      "name": "Parse CSV/XLSX attachment",
+      "id": "route_csv",
+      "name": "Is CSV attachment?",
       "position": [
         80,
         -40
       ],
-      "type": "n8n-nodes-base.spreadsheetFile",
-      "typeVersion": 2
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "is_xls",
+              "leftValue": "={{ $binary.data.fileExtension || \"\" }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "xls"
+            }
+          ],
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "route_xls",
+      "name": "Is legacy XLS attachment?",
+      "position": [
+        300,
+        120
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "csv",
+        "binaryPropertyName": "data",
+        "options": {
+          "headerRow": true,
+          "includeEmptyCells": false
+        }
+      },
+      "id": "extract_csv",
+      "name": "Extract CSV rows",
+      "position": [
+        520,
+        -200
+      ],
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "xls",
+        "binaryPropertyName": "data",
+        "options": {
+          "headerRow": true,
+          "includeEmptyCells": false
+        }
+      },
+      "id": "extract_xls",
+      "name": "Extract XLS rows",
+      "position": [
+        740,
+        0
+      ],
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "data",
+        "options": {
+          "headerRow": true,
+          "includeEmptyCells": false
+        }
+      },
+      "id": "extract_xlsx",
+      "name": "Extract XLSX rows",
+      "position": [
+        740,
+        200
+      ],
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1
     },
     {
       "parameters": {
@@ -671,18 +773,7 @@
       "main": [
         [
           {
-            "node": "Parse CSV/XLSX attachment",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse CSV/XLSX attachment": {
-      "main": [
-        [
-          {
-            "node": "Keep email metadata with each parsed row",
+            "node": "Is CSV attachment?",
             "type": "main",
             "index": 0
           }
@@ -905,6 +996,75 @@
         [
           {
             "node": "Mark imported emails as read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is CSV attachment?": {
+      "main": [
+        [
+          {
+            "node": "Extract CSV rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is legacy XLS attachment?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is legacy XLS attachment?": {
+      "main": [
+        [
+          {
+            "node": "Extract XLS rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract XLSX rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract CSV rows": {
+      "main": [
+        [
+          {
+            "node": "Keep email metadata with each parsed row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract XLS rows": {
+      "main": [
+        [
+          {
+            "node": "Keep email metadata with each parsed row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract XLSX rows": {
+      "main": [
+        [
+          {
+            "node": "Keep email metadata with each parsed row",
             "type": "main",
             "index": 0
           }
