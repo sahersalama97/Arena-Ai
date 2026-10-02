@@ -134,6 +134,20 @@
     },
     {
       "parameters": {
+        "jsCode": "return items.map(item => {\n  const id = item.json.Meta_Ad_Account_ID;\n  if (typeof id === 'string') {\n    item.json.Meta_Ad_Account_ID = id.replace(/^act_/, '');\n  }\n  return item;\n});"
+      },
+      "id": "b0f2d7e8-8a4d-4b7d-9a2c-0c2f0d1e6a11",
+      "name": "Remove act_ prefix",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        736
+      ],
+      "notes": "Meta returns ad account IDs in the act_<id> format. Store only the numeric account ID in the Brand Registry."
+    },
+    {
+      "parameters": {
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
@@ -319,7 +333,7 @@
       "main": [
         [
           {
-            "node": "Append new brands",
+            "node": "Remove act_ prefix",
             "type": "main",
             "index": 0
           }
@@ -342,6 +356,17 @@
         [
           {
             "node": "Send new-brand alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove act_ prefix": {
+      "main": [
+        [
+          {
+            "node": "Append new brands",
             "type": "main",
             "index": 0
           }
