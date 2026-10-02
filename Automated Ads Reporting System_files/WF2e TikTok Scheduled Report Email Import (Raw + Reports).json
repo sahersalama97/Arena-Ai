@@ -39,7 +39,7 @@
         "returnAll": true,
         "simple": false,
         "filters": {
-          "q": "is:unread has:attachment newer_than:7d {from:(tiktok.com) from:(tiktokforbusiness.com)} {filename:csv filename:xlsx filename:xls}"
+          "q": "is:unread has:attachment newer_than:30d {filename:csv filename:xlsx filename:xls filename:xlsm}"
         },
         "options": {
           "downloadAttachments": true
@@ -59,7 +59,7 @@
           "name": "Gmail account"
         }
       },
-      "notes": "Change the Gmail search in this node if TikTok uses a different sender domain or if your report is delivered as a link instead of an attachment."
+      "notes": "Searches all senders for unread spreadsheet attachments. Keep is:unread to prevent the same email being imported on every poll."
     },
     {
       "parameters": {
@@ -108,7 +108,7 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "function header(j, wanted) {\n  const h = j?.payload?.headers || j?.headers || [];\n  const found = h.find(x => String(x.name || '').toLowerCase() === wanted.toLowerCase());\n  if (found) return found.value;\n  return j[wanted] || j[wanted.toLowerCase()] || '';\n}\nconst out = [];\nfor (const item of $input.all()) {\n  const j = item.json || {};\n  const from = header(j, 'From') || j.from?.text || j.from?.value || '';\n  const subject = header(j, 'Subject') || j.subject || '';\n  const identity = `${from} ${subject}`;\n  if (!/tiktok/i.test(identity)) continue;\n  const messageId = j.id || j.messageId || j.threadId || '';\n  const emailDate = j.internalDate || header(j, 'Date') || j.date || new Date().toISOString();\n  for (const [property, binary] of Object.entries(item.binary || {})) {\n    const fileName = binary.fileName || property;\n    const mime = binary.mimeType || '';\n    const isSheet = /\\.(csv|xlsx?|xlsm)$/i.test(fileName) || /csv|spreadsheet|excel|sheet/i.test(mime);\n    if (!isSheet) continue;\n    out.push({\n      json: { messageId, threadId: j.threadId || '', from, subject, emailDate, fileName, sourceProperty: property },\n      binary: { data: binary }\n    });\n  }\n}\nreturn out;"
+        "jsCode": "function header(j, wanted) {\n  const h = j?.payload?.headers || j?.headers || [];\n  const found = h.find(x => String(x.name || '').toLowerCase() === wanted.toLowerCase());\n  if (found) return found.value;\n  return j[wanted] || j[wanted.toLowerCase()] || '';\n}\nconst out = [];\nfor (const item of $input.all()) {\n  const j = item.json || {};\n  const from = header(j, 'From') || j.from?.text || j.from?.value || '';\n  const subject = header(j, 'Subject') || j.subject || '';\n  const messageId = j.id || j.messageId || j.threadId || '';\n  const emailDate = j.internalDate || header(j, 'Date') || j.date || new Date().toISOString();\n  for (const [property, binary] of Object.entries(item.binary || {})) {\n    const fileName = binary.fileName || property;\n    const mime = binary.mimeType || '';\n    const isSheet = /\\.(csv|xlsx?|xlsm)$/i.test(fileName) || /csv|spreadsheet|excel|sheet/i.test(mime);\n    if (!isSheet) continue;\n    out.push({\n      json: { messageId, threadId: j.threadId || '', from, subject, emailDate, fileName, sourceProperty: property },\n      binary: { data: binary }\n    });\n  }\n}\nreturn out;"
       },
       "id": "extract",
       "name": "Extract TikTok report attachments",
@@ -118,7 +118,7 @@
       ],
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "notes": "Only CSV/XLS/XLSX attachments from a message whose sender or subject contains TikTok are passed forward."
+      "notes": "Accepts spreadsheet attachments from any sender. Brand matching and TikTok-column normalization happen in the next Code node."
     },
     {
       "parameters": {
