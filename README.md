@@ -2,7 +2,7 @@
 
 This repository contains the n8n workflow exports for the automated ads reporting system. The new workflow requested for TikTok scheduled reports is:
 
-**`Automated Ads Reporting System_files/WF2e TikTok Scheduled Report Email Import (Raw + Reports).json`**
+**`Automated Ads Reporting System_files/WF2e TikTok Scheduled Report Email Import (Raw Only).json`**
 
 It is an email-based alternative to the existing TikTok API workflow (`WF2u TikTok Daily Sync (All Brands).json`). It:
 
@@ -11,8 +11,8 @@ It is an email-based alternative to the existing TikTok API workflow (`WF2u TikT
 3. Matches each report to the active row in the Brand Registry using the TikTok advertiser ID or brand name. For a one-brand registry, it has a safe single-brand fallback.
 4. Normalizes TikTok labels and metrics into the existing raw-sheet schema.
 5. Upserts account rows into `Daily_Raw_TikTok` using `Date` and ad rows into `Daily_Raw_TikTok_Ads` using `Date + Ad_ID`.
-6. Reads the updated raw tabs and refreshes the TikTok monthly report tabs: `TikTok Overview`, `TikTok Ad Performance`, `TikTok Creative Rollup`, and `TikTok Weekly`.
-7. Marks the source Gmail message as read only after the import/report path completes. Mapping failures are sent to the configured alert address instead.
+6. Writes only the daily raw tabs; it does not read, write, or refresh any weekly/monthly report workbook.
+7. Marks the source Gmail message as read only after the raw-sheet upserts complete. Mapping failures are sent to the configured alert address instead.
 
 ## n8n setup
 
@@ -28,7 +28,7 @@ It is an email-based alternative to the existing TikTok API workflow (`WF2u TikT
    - `TikTok_Advertiser_ID` when the source export contains it
    - `Raw_Sheet_ID`
    - `Current_Month_Report_Sheet_ID`
-6. Optional: add `Weekly_Report_Sheet_ID` to the registry. If it is blank or absent, `TikTok Weekly` is written to `Current_Month_Report_Sheet_ID` as a tab in the monthly report workbook.
+6. The report-sheet ID is retained in the registry for the separate reporting workflow, but this importer never writes to it.
 7. Confirm the raw template tabs and headers. The workflow expects:
 
 ### `Daily_Raw_TikTok`
@@ -41,7 +41,7 @@ It is an email-based alternative to the existing TikTok API workflow (`WF2u TikT
 
 The existing one-off template workflow creates these tabs and writes the headers. Run it once if a raw template copy does not have them.
 
-When the incoming file is an ad-level report, the workflow writes each row to `Daily_Raw_TikTok_Ads` and also creates one aggregated account row per brand/day in `Daily_Raw_TikTok`. This keeps the overview and weekly tabs populated without copying every ad row into the account tab.
+When the incoming file is an ad-level report, the workflow writes each row to `Daily_Raw_TikTok_Ads` and also creates one aggregated account row per brand/day in `Daily_Raw_TikTok`. This importer stops after the raw upserts; the separate reporting workflow remains responsible for weekly/monthly sheets.
 
 ## Matching a TikTok export
 
@@ -51,6 +51,6 @@ The source must be an attachment. The Gmail search is intentionally sender-agnos
 
 ## Report timing and ownership
 
-The importer refreshes the current month's TikTok tabs after every successful email import. `TikTok Weekly` contains Monday–Sunday rollups for the current month. The existing `WF3u Report Generator + Email (All Brands).json` remains the owner of the full Meta + TikTok report cycle and the `Combined` tab; keep its weekly/monthly triggers enabled if those outputs and report emails are required.
+This workflow intentionally stops after writing the daily raw tabs. It never touches weekly or monthly report sheets. Keep the existing `WF3u Report Generator + Email (All Brands).json` workflow enabled for report generation, report formatting, and report emails.
 
 For a first run, use **Manual Test** with one known unread TikTok report email, inspect the normalized rows, and only then activate the 10-minute poll. The workflow is inactive in the export.
