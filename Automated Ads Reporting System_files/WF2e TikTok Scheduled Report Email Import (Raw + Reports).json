@@ -1,0 +1,926 @@
+{
+  "name": "WF2e TikTok Scheduled Report Email Import (Raw + Reports)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "tr_manual",
+      "name": "Manual Test",
+      "position": [
+        -960,
+        -160
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "id": "tr_poll",
+      "name": "Poll Gmail every 10 minutes",
+      "position": [
+        -960,
+        80
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": true,
+        "simple": false,
+        "filters": {
+          "q": "is:unread has:attachment newer_than:7d {from:(tiktok.com) from:(tiktokforbusiness.com)} {filename:csv filename:xlsx filename:xls}"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "id": "gmail_search",
+      "name": "Find unread TikTok report emails",
+      "position": [
+        -704,
+        -40
+      ],
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      },
+      "notes": "Change the Gmail search in this node if TikTok uses a different sender domain or if your report is delivered as a link instead of an attachment."
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "options": {}
+      },
+      "id": "registry",
+      "name": "Read Brand Registry",
+      "position": [
+        -704,
+        240
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "passThrough",
+        "output": "input1"
+      },
+      "id": "merge_prereqs",
+      "name": "Wait for email search + registry",
+      "position": [
+        -432,
+        -40
+      ],
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "function header(j, wanted) {\n  const h = j?.payload?.headers || j?.headers || [];\n  const found = h.find(x => String(x.name || '').toLowerCase() === wanted.toLowerCase());\n  if (found) return found.value;\n  return j[wanted] || j[wanted.toLowerCase()] || '';\n}\nconst out = [];\nfor (const item of $input.all()) {\n  const j = item.json || {};\n  const from = header(j, 'From') || j.from?.text || j.from?.value || '';\n  const subject = header(j, 'Subject') || j.subject || '';\n  const identity = `${from} ${subject}`;\n  if (!/tiktok/i.test(identity)) continue;\n  const messageId = j.id || j.messageId || j.threadId || '';\n  const emailDate = j.internalDate || header(j, 'Date') || j.date || new Date().toISOString();\n  for (const [property, binary] of Object.entries(item.binary || {})) {\n    const fileName = binary.fileName || property;\n    const mime = binary.mimeType || '';\n    const isSheet = /\\.(csv|xlsx?|xlsm)$/i.test(fileName) || /csv|spreadsheet|excel|sheet/i.test(mime);\n    if (!isSheet) continue;\n    out.push({\n      json: { messageId, threadId: j.threadId || '', from, subject, emailDate, fileName, sourceProperty: property },\n      binary: { data: binary }\n    });\n  }\n}\nreturn out;"
+      },
+      "id": "extract",
+      "name": "Extract TikTok report attachments",
+      "position": [
+        -176,
+        -40
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "notes": "Only CSV/XLS/XLSX attachments from a message whose sender or subject contains TikTok are passed forward."
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "binaryPropertyName": "data",
+        "options": {
+          "headerRow": true,
+          "includeEmptyRows": false
+        }
+      },
+      "id": "spreadsheet",
+      "name": "Parse CSV/XLSX attachment",
+      "position": [
+        80,
+        -40
+      ],
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const source = $('Extract TikTok report attachments').item.json;\nreturn {\n  json: {\n    ...$json,\n    __source_messageId: source.messageId,\n    __source_threadId: source.threadId,\n    __source_subject: source.subject,\n    __source_from: source.from,\n    __source_emailDate: source.emailDate,\n    __source_fileName: source.fileName\n  }\n};"
+      },
+      "id": "tag_rows",
+      "name": "Keep email metadata with each parsed row",
+      "position": [
+        320,
+        -40
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// This is the only mapping layer. Add or remove aliases here when TikTok changes\n// the column labels in its scheduled CSV/XLSX export.\nconst clean = v => String(v ?? '').trim();\nconst key = v => clean(v).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]/g, '');\nconst num = (value, percent = false) => {\n  if (value === null || value === undefined || clean(value) === '' || clean(value) === '-' || clean(value) === '\u2014') return 0;\n  const raw = clean(value);\n  const hadPercent = raw.includes('%');\n  const n = Number(raw.replace(/,/g, '').replace(/[$\u20ac\u00a3]/g, '').replace(/[^0-9.eE+\\-]/g, ''));\n  if (!Number.isFinite(n)) return 0;\n  return percent && !hadPercent && Math.abs(n) <= 1 ? n * 100 : n;\n};\nconst round = (n, p = 4) => { const f = 10 ** p; return Math.round((Number(n) || 0) * f) / f; };\nfunction dateOnly(value) {\n  if (value === null || value === undefined || clean(value) === '') return '';\n  if (typeof value === 'number' && value > 20000 && value < 70000) {\n    const d = new Date(Date.UTC(1899, 11, 30) + value * 86400000);\n    return d.toISOString().slice(0, 10);\n  }\n  const s = clean(value);\n  let m = s.match(/^(\\d{4})[-\\/.](\\d{1,2})[-\\/.](\\d{1,2})/);\n  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;\n  m = s.match(/^(\\d{1,2})[-\\/.](\\d{1,2})[-\\/.](\\d{4})/);\n  if (m) return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`;\n  const d = new Date(s);\n  return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);\n}\nconst aliases = {\n  date: ['date', 'day', 'stat time day', 'stat_time_day', 'report date', 'date start'],\n  advertiser: ['advertiser id', 'advertiser_id', 'ad account id', 'account id'],\n  adId: ['ad id', 'ad_id', 'ad identifier'],\n  adName: ['ad name', 'ad_name', 'ad'],\n  campaign: ['campaign name', 'campaign_name', 'campaign'],\n  adGroup: ['adgroup name', 'ad group name', 'adgroup_name', 'ad group', 'adgroup'],\n  creative: ['creative key', 'creative_key', 'creative name', 'creative', 'video id', 'post id'],\n  spend: ['spend', 'cost', 'amount spent', 'total cost'],\n  impressions: ['impressions', 'impression'],\n  reach: ['reach'],\n  cpm: ['cpm'],\n  clicks: ['clicks', 'clicks all', 'clicks (all)', 'outbound clicks', 'click'],\n  ctr: ['ctr', 'ctr all', 'ctr (all)', 'click through rate'],\n  frequency: ['frequency'],\n  profileVisits: ['profile visits', 'profile page views', 'profile_visit'],\n  follows: ['follows', 'follows gained', 'new follows'],\n  atc: ['adds to cart', 'add to cart', 'add to cart count', 'onsite shopping add to cart'],\n  ic: ['initiate checkout', 'initiate checkout count', 'checkout initiated', 'onsite shopping initiate checkout count'],\n  purchases: ['purchases', 'purchase', 'complete payment', 'onsite shopping purchase', 'conversions'],\n  purchaseValue: ['purchases value', 'purchase value', 'complete payment value', 'onsite shopping purchase value', 'gross revenue', 'revenue'],\n  roas: ['roas', 'purchase roas'],\n  aov: ['aov', 'average order value'],\n  purchaseCvr: ['purchase cvr', 'purchase conversion rate', 'purchase cvr pct']\n};\nfunction findKey(row, names) {\n  const entries = Object.keys(row).filter(k => !k.startsWith('__'));\n  const wanted = names.map(key);\n  let hit = entries.find(k => wanted.includes(key(k)));\n  if (hit) return hit;\n  hit = entries.find(k => wanted.some(w => w.length > 3 && (key(k).includes(w) || w.includes(key(k)))));\n  return hit || '';\n}\nfunction get(row, names) { const k = findKey(row, names); return k ? row[k] : ''; }\nconst registry = $('Read Brand Registry').all().map(i => i.json).filter(r => {\n  const status = clean(r.Status).toLowerCase();\n  const platform = clean(r.Platform).toLowerCase();\n  return status === 'active' && r.Raw_Sheet_ID && (!platform || platform.includes('tiktok'));\n});\nfunction matchBrand(row) {\n  const identity = Object.entries(row).filter(([k]) => !k.startsWith('__')).map(([, v]) => clean(v)).join(' ').toLowerCase();\n  const source = `${clean(row.__source_subject)} ${clean(row.__source_fileName)}`.toLowerCase();\n  for (const brand of registry) {\n    const advertiser = clean(brand.TikTok_Advertiser_ID);\n    if (advertiser && identity.includes(advertiser.toLowerCase())) return brand;\n    const name = clean(brand.Brand_Name).toLowerCase();\n    if (name.length > 2 && `${source} ${identity}`.includes(name)) return brand;\n  }\n  // Safe fallback for a one-brand registry; set this to false if multiple brands\n  // share the same TikTok inbox and every report must identify its advertiser ID.\n  if (registry.length === 1) return registry[0];\n  return null;\n}\nconst out = [];\nfor (const item of $input.all()) {\n  const row = item.json || {};\n  const date = dateOnly(get(row, aliases.date));\n  const brand = matchBrand(row);\n  const isAd = Boolean(get(row, aliases.adId) || get(row, aliases.adName) || get(row, aliases.adGroup) || get(row, aliases.campaign));\n  const baseError = !brand ? 'Could not match this TikTok report to an active Brand Registry row' : (!brand.Raw_Sheet_ID ? 'Matched brand has no Raw_Sheet_ID' : (!date ? 'Could not find a report date' : ''));\n  if (baseError) {\n    out.push({ json: { error: baseError, messageId: row.__source_messageId, subject: row.__source_subject, fileName: row.__source_fileName } });\n    continue;\n  }\n  const spend = num(get(row, aliases.spend));\n  const impressions = num(get(row, aliases.impressions));\n  const reach = num(get(row, aliases.reach));\n  const clicks = num(get(row, aliases.clicks));\n  const purchases = num(get(row, aliases.purchases));\n  const purchasesValue = num(get(row, aliases.purchaseValue));\n  const atc = num(get(row, aliases.atc));\n  const ic = num(get(row, aliases.ic));\n  const ctrRaw = get(row, aliases.ctr);\n  const cpmRaw = get(row, aliases.cpm);\n  const roasRaw = get(row, aliases.roas);\n  const aovRaw = get(row, aliases.aov);\n  const cvrRaw = get(row, aliases.purchaseCvr);\n  const adId = clean(get(row, aliases.adId));\n  const adName = clean(get(row, aliases.adName));\n  const campaign = clean(get(row, aliases.campaign));\n  const adGroup = clean(get(row, aliases.adGroup));\n  const creative = clean(get(row, aliases.creative)) || adName || adId;\n  const level = isAd ? 'ad' : 'account';\n  const result = {\n    Brand_Name: brand.Brand_Name,\n    Raw_Sheet_ID: brand.Raw_Sheet_ID,\n    Report_Sheet_ID: brand.Current_Month_Report_Sheet_ID || '',\n    Weekly_Report_Sheet_ID: brand.Weekly_Report_Sheet_ID || brand.Current_Month_Report_Sheet_ID || '',\n    messageId: row.__source_messageId,\n    Subject: row.__source_subject,\n    reportLevel: level,\n    Date: date,\n    Spend: round(spend, 2),\n    Impressions: Math.round(impressions),\n    Reach: Math.round(reach),\n    CPM: round(cpmRaw === '' ? (impressions ? spend / impressions * 1000 : 0) : num(cpmRaw), 2),\n    Clicks: Math.round(clicks),\n    CTR_Pct: round(ctrRaw === '' ? (impressions ? clicks / impressions * 100 : 0) : num(ctrRaw, true), 4),\n    Frequency: round(num(get(row, aliases.frequency) || (reach ? impressions / reach : 0)), 2),\n    Profile_Visits: Math.round(num(get(row, aliases.profileVisits))),\n    Follows: Math.round(num(get(row, aliases.follows))),\n    Adds_to_Cart: Math.round(atc),\n    Initiate_Checkout: Math.round(ic),\n    Purchases: Math.round(purchases),\n    Purchases_Value: round(purchasesValue, 2),\n    ROAS: round(roasRaw === '' ? (spend ? purchasesValue / spend : 0) : num(roasRaw), 4),\n    AOV: round(aovRaw === '' ? (purchases ? purchasesValue / purchases : 0) : num(aovRaw), 2),\n    Purchase_CVR_Pct: round(cvrRaw === '' ? (clicks ? purchases / clicks * 100 : 0) : num(cvrRaw, true), 4),\n    Pulled_At: new Date().toISOString()\n  };\n  if (level === 'ad') Object.assign(result, { Ad_ID: adId, Ad_Name: adName, Campaign_Name: campaign, AdGroup_Name: adGroup, Creative_Key: creative });\n  out.push({ json: result });\n}\nreturn out;"
+      },
+      "id": "normalize",
+      "name": "Normalize TikTok rows to raw-sheet headers",
+      "position": [
+        560,
+        -40
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "notes": "The target tabs and headers are fixed by the existing Raw Data template. Edit aliases above if your TikTok export uses different names."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "error",
+              "leftValue": "={{ $json.error }}",
+              "operator": {
+                "operation": "exists",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "if_error",
+      "name": "Has mapping error?",
+      "position": [
+        800,
+        -40
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "fromEmail": "PASTE_ALERT_SENDER_EMAIL@example.com",
+        "toEmail": "={{ $env.TIKTOK_ALERT_EMAIL || 'PASTE_ALERT_RECIPIENT@example.com' }}",
+        "subject": "TikTok report import needs review",
+        "emailType": "text",
+        "message": "={{ 'The TikTok email was not imported.\n\nReason: ' + ($json.error || 'unknown') + '\nSubject: ' + ($json.subject || '') + '\nFile: ' + ($json.fileName || '') + '\n\nUpdate the aliases/brand match in Normalize TikTok rows to raw-sheet headers, then mark the email unread and run again.' }}"
+      },
+      "id": "alert_mapping",
+      "name": "Alert on unmatched TikTok report",
+      "position": [
+        1040,
+        -240
+      ],
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_WITH_SMTP_CREDENTIAL_ID",
+          "name": "SMTP account"
+        }
+      },
+      "notes": "Optional failure alert. Configure SMTP and TIKTOK_ALERT_EMAIL, or remove this node if you do not want alerts."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "level",
+              "leftValue": "={{ $json.reportLevel }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "ad"
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "if_ad",
+      "name": "Is this an ad-level report?",
+      "position": [
+        1040,
+        40
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return items.map(i => ({json: {\n  Date: i.json.Date, Spend: i.json.Spend, Impressions: i.json.Impressions, Reach: i.json.Reach,\n  CPM: i.json.CPM, Clicks: i.json.Clicks, CTR_Pct: i.json.CTR_Pct, Frequency: i.json.Frequency,\n  Profile_Visits: i.json.Profile_Visits, Follows: i.json.Follows, Adds_to_Cart: i.json.Adds_to_Cart,\n  Initiate_Checkout: i.json.Initiate_Checkout, Purchases: i.json.Purchases,\n  Purchases_Value: i.json.Purchases_Value, ROAS: i.json.ROAS, AOV: i.json.AOV,\n  Purchase_CVR_Pct: i.json.Purchase_CVR_Pct, Pulled_At: i.json.Pulled_At\n}}));"
+      },
+      "id": "prep_account",
+      "name": "Prepare account-level raw row",
+      "position": [
+        1280,
+        -40
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return items.map(i => ({json: {\n  Date: i.json.Date, Ad_ID: i.json.Ad_ID, Ad_Name: i.json.Ad_Name, Campaign_Name: i.json.Campaign_Name,\n  AdGroup_Name: i.json.AdGroup_Name, Creative_Key: i.json.Creative_Key, Spend: i.json.Spend,\n  Impressions: i.json.Impressions, Reach: i.json.Reach, CPM: i.json.CPM, Clicks: i.json.Clicks,\n  CTR_Pct: i.json.CTR_Pct, Profile_Visits: i.json.Profile_Visits, Follows: i.json.Follows,\n  Adds_to_Cart: i.json.Adds_to_Cart, Initiate_Checkout: i.json.Initiate_Checkout,\n  Purchases: i.json.Purchases, Purchases_Value: i.json.Purchases_Value, ROAS: i.json.ROAS,\n  AOV: i.json.AOV, Purchase_CVR_Pct: i.json.Purchase_CVR_Pct, Pulled_At: i.json.Pulled_At\n}}));"
+      },
+      "id": "prep_ad",
+      "name": "Prepare ad-level raw row",
+      "position": [
+        1280,
+        160
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Normalize TikTok rows to raw-sheet headers').item.json.Raw_Sheet_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok"
+        },
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "Date"
+          ],
+          "schema": [],
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "upsert_account",
+      "name": "Upsert Daily_Raw_TikTok",
+      "position": [
+        1520,
+        -40
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Normalize TikTok rows to raw-sheet headers').item.json.Raw_Sheet_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok_Ads"
+        },
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "Date",
+            "Ad_ID"
+          ],
+          "schema": [],
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "upsert_ad",
+      "name": "Upsert Daily_Raw_TikTok_Ads",
+      "position": [
+        1520,
+        160
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const seen = new Map();\nfor (const item of $input.all()) {\n  const j = item.json || {};\n  if (!j.Raw_Sheet_ID || seen.has(j.Raw_Sheet_ID)) continue;\n  seen.set(j.Raw_Sheet_ID, {Brand_Name: j.Brand_Name, Raw_Sheet_ID: j.Raw_Sheet_ID, Report_Sheet_ID: j.Report_Sheet_ID || '', Weekly_Report_Sheet_ID: j.Weekly_Report_Sheet_ID || j.Report_Sheet_ID || ''});\n}\nreturn [...seen.values()].map(json => ({json}));"
+      },
+      "id": "affected",
+      "name": "Collect affected brands",
+      "position": [
+        1040,
+        400
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "notes": "Only brands present in the incoming email are refreshed; this avoids rewriting every brand's report."
+    },
+    {
+      "parameters": {
+        "mode": "passThrough",
+        "output": "input1"
+      },
+      "id": "merge_writes",
+      "name": "Wait for raw upserts",
+      "position": [
+        1760,
+        40
+      ],
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $('Collect affected brands').all().map(i => ({json: i.json}));"
+      },
+      "id": "begin_refresh",
+      "name": "Begin weekly/monthly report refresh",
+      "position": [
+        2000,
+        40
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "notes": "This runs after the raw upserts, so report tabs always include the newly imported rows."
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.Raw_Sheet_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok"
+        },
+        "options": {}
+      },
+      "id": "read_account",
+      "name": "Read Daily_Raw_TikTok for report",
+      "position": [
+        2240,
+        -80
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.Raw_Sheet_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok_Ads"
+        },
+        "options": {}
+      },
+      "id": "read_ad",
+      "name": "Read Daily_Raw_TikTok_Ads for report",
+      "position": [
+        2240,
+        160
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const brand = $('Begin weekly/monthly report refresh').item.json;\nreturn {json: {...$json, __Raw_Sheet_ID: brand.Raw_Sheet_ID, __Brand_Name: brand.Brand_Name, __Report_Sheet_ID: brand.Report_Sheet_ID}};"
+      },
+      "id": "tag_account",
+      "name": "Tag account snapshot rows",
+      "position": [
+        2480,
+        -80
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const brand = $('Begin weekly/monthly report refresh').item.json;\nreturn {json: {...$json, __Raw_Sheet_ID: brand.Raw_Sheet_ID, __Brand_Name: brand.Brand_Name, __Report_Sheet_ID: brand.Report_Sheet_ID}};"
+      },
+      "id": "tag_ad",
+      "name": "Tag ad snapshot rows",
+      "position": [
+        2480,
+        160
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "passThrough",
+        "output": "input1"
+      },
+      "id": "merge_snapshots",
+      "name": "Wait for both raw snapshots",
+      "position": [
+        2720,
+        40
+      ],
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const clean = v => String(v ?? '').trim();\nconst n = v => { const x = Number(v); return Number.isFinite(x) ? x : 0; };\nconst round = (x, p = 4) => { const f = 10 ** p; return Math.round(n(x) * f) / f; };\nconst today = new Date();\ntoday.setUTCHours(0, 0, 0, 0);\nconst yesterday = new Date(today.getTime() - 86400000);\nconst monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));\nconst iso = d => d.toISOString().slice(0, 10);\nconst currentMonth = iso(monthStart);\nconst periodEnd = iso(yesterday);\nconst accountRows = $('Tag account snapshot rows').all().map(i => i.json).filter(r => r.Date && r.Date >= currentMonth && r.Date <= periodEnd);\nconst adRows = $('Tag ad snapshot rows').all().map(i => i.json).filter(r => r.Date && r.Date >= currentMonth && r.Date <= periodEnd);\nconst brands = $('Begin weekly/monthly report refresh').all().filter(i => i.json.Report_Sheet_ID).map(i => i.json);\nconst out = [];\nfunction add(brand, tab, startCell, values) { const destination = tab === 'TikTok Weekly' ? (brand.Weekly_Report_Sheet_ID || brand.Report_Sheet_ID) : brand.Report_Sheet_ID; if (destination) out.push({json: {Brand_Name: brand.Brand_Name, Report_Sheet_ID: destination, tab, startCell, values}}); }\nfunction rowsFor(list, id) { return list.filter(r => r.__Raw_Sheet_ID === id); }\nfor (const brand of brands) {\n  const ar = rowsFor(accountRows, brand.Raw_Sheet_ID);\n  const dr = rowsFor(adRows, brand.Raw_Sheet_ID);\n  let spend=0, impressions=0, reach=0, clicks=0, atc=0, ic=0, purchases=0, value=0, visits=0, follows=0;\n  for (const r of ar) { spend+=n(r.Spend); impressions+=n(r.Impressions); reach+=n(r.Reach); clicks+=n(r.Clicks); atc+=n(r.Adds_to_Cart); ic+=n(r.Initiate_Checkout); purchases+=n(r.Purchases); value+=n(r.Purchases_Value); visits+=n(r.Profile_Visits); follows+=n(r.Follows); }\n  const overview = [\n    ['Spend', round(spend,2)], ['CPM', round(impressions ? spend/impressions*1000 : 0,2)],\n    ['CTR (Destination)', round(impressions ? clicks/impressions*100 : 0,4)], ['Landing Page Views (LPV)', ''],\n    ['Add To Cart (ATC)', atc], ['Cost per ATC', round(atc ? spend/atc : 0,2)],\n    ['Checkout Initiated (IC equivalent)', ic], ['Cost per Checkout', round(ic ? spend/ic : 0,2)],\n    ['Frequency*', round(reach ? impressions/reach : 0,2)], ['Purchases', purchases],\n    ['Purchases Value', round(value,2)], ['ROAS', round(spend ? value/spend : 0,4)],\n    ['AOV', round(purchases ? value/purchases : 0,2)], ['Purchase CVR%', round(clicks ? purchases/clicks*100 : 0,4)],\n    ['ATC / LPV', ''], ['Paid Profile Visits', visits], ['Paid Follows', follows], ['Reach', reach]\n  ];\n  add(brand, 'TikTok Overview', 'A4', overview);\n\n  const ads = {};\n  for (const r of dr) {\n    const k = clean(r.Ad_ID) || clean(r.Ad_Name) || '(unknown)';\n    if (!ads[k]) ads[k] = {Ad_Name:r.Ad_Name, AdGroup_Name:r.AdGroup_Name, Creative_Key:r.Creative_Key, spend:0, impressions:0, clicks:0, atc:0, ic:0, purchases:0, value:0, visits:0, follows:0, reach:0};\n    const g=ads[k]; g.spend+=n(r.Spend); g.impressions+=n(r.Impressions); g.clicks+=n(r.Clicks); g.atc+=n(r.Adds_to_Cart); g.ic+=n(r.Initiate_Checkout); g.purchases+=n(r.Purchases); g.value+=n(r.Purchases_Value); g.visits+=n(r.Profile_Visits); g.follows+=n(r.Follows); g.reach=Math.max(g.reach,n(r.Reach));\n  }\n  const adList = Object.values(ads).sort((a,b)=>b.spend-a.spend).map((g,idx)=>[idx+1,g.Ad_Name,g.AdGroup_Name,g.Creative_Key,round(g.spend,2),round(g.impressions?g.spend/g.impressions*1000:0,2),round(g.impressions?g.clicks/g.impressions*100:0,4),'',g.atc,round(g.atc?g.spend/g.atc:0,2),'',g.ic,round(g.ic?g.spend/g.ic:0,2),round(g.reach?g.impressions/g.reach:0,2),g.purchases,round(g.value,2),round(g.spend?g.value/g.spend:0,4),round(g.purchases?g.value/g.purchases:0,2),round(g.clicks?g.purchases/g.clicks*100:0,4),g.reach,g.visits,g.follows,g.impressions,g.clicks]);\n  while (adList.length < 500) adList.push(new Array(24).fill(''));\n  add(brand, 'TikTok Ad Performance', 'A5', adList);\n\n  const creatives = {};\n  for (const r of dr) {\n    const k=clean(r.Creative_Key)||'(unknown)';\n    if(!creatives[k]) creatives[k]={ids:new Set(),spend:0,impressions:0,clicks:0,atc:0,ic:0,purchases:0,value:0,visits:0,follows:0};\n    const g=creatives[k]; g.ids.add(clean(r.Ad_ID)); g.spend+=n(r.Spend); g.impressions+=n(r.Impressions); g.clicks+=n(r.Clicks); g.atc+=n(r.Adds_to_Cart); g.ic+=n(r.Initiate_Checkout); g.purchases+=n(r.Purchases); g.value+=n(r.Purchases_Value); g.visits+=n(r.Profile_Visits); g.follows+=n(r.Follows);\n  }\n  const creativeList = Object.entries(creatives).sort((a,b)=>b[1].spend-a[1].spend).map(([name,g],idx)=>[idx+1,name,g.ids.size,round(g.spend,2),round(g.impressions?g.spend/g.impressions*1000:0,2),round(g.impressions?g.clicks/g.impressions*100:0,4),'',g.atc,round(g.atc?g.spend/g.atc:0,2),'',g.ic,round(g.ic?g.spend/g.ic:0,2),g.purchases,round(g.value,2),round(g.spend?g.value/g.spend:0,4),round(g.purchases?g.value/g.purchases:0,2),round(g.clicks?g.purchases/g.clicks*100:0,4),g.visits,g.follows,g.impressions,g.clicks]);\n  while (creativeList.length < 500) creativeList.push(new Array(21).fill(''));\n  add(brand, 'TikTok Creative Rollup', 'A4', creativeList);\n\n  const weeks = {};\n  for (const r of ar) {\n    const d = new Date(`${r.Date}T00:00:00Z`);\n    const day = d.getUTCDay() || 7;\n    const ws = new Date(d.getTime() - (day - 1) * 86400000);\n    const k = iso(ws);\n    if (!weeks[k]) weeks[k] = {start:ws, spend:0, impressions:0, purchases:0, value:0};\n    const w=weeks[k]; w.spend+=n(r.Spend); w.impressions+=n(r.Impressions); w.purchases+=n(r.Purchases); w.value+=n(r.Purchases_Value);\n  }\n  const weekList = Object.values(weeks).sort((a,b)=>a.start-b.start).map((w,idx)=>[idx+1, `${w.start.toISOString().slice(5,10)} - ${new Date(w.start.getTime()+6*86400000).toISOString().slice(5,10)}`, round(w.spend,2), round(w.impressions?w.spend/w.impressions*1000:0,2), w.purchases, round(w.value,2), round(w.spend?w.value/w.spend:0,4)]);\n  while (weekList.length < 60) weekList.push(new Array(7).fill(''));\n  add(brand, 'TikTok Weekly', 'A4', weekList);\n}\nreturn out;"
+      },
+      "id": "build_reports",
+      "name": "Build weekly and monthly TikTok report tabs",
+      "position": [
+        2960,
+        40
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "notes": "The current month's raw rows are summarized into TikTok Overview, Ad Performance, Creative Rollup, and TikTok Weekly. The existing WF3 workflow remains the owner of Meta and Combined tabs."
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.Report_Sheet_ID }}/values/{{ encodeURIComponent(\"'\" + $json.tab + \"'!\" + $json.startCell) }}?valueInputOption=RAW",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ values: $json.values }) }}",
+        "options": {}
+      },
+      "id": "write_reports",
+      "name": "Write TikTok weekly/monthly report tabs",
+      "position": [
+        3200,
+        40
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HBrhYwOa6DITasss",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const seen = new Set();\nfor (const item of $('Extract TikTok report attachments').all()) {\n  const id = item.json.messageId;\n  if (id && !seen.has(id)) { seen.add(id); }\n}\nreturn [...seen].map(messageId => ({json: {messageId}}));"
+      },
+      "id": "messages",
+      "name": "Collect successfully imported message IDs",
+      "position": [
+        3440,
+        40
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "markAsRead",
+        "messageId": "={{ $json.messageId }}"
+      },
+      "id": "gmail_read",
+      "name": "Mark imported emails as read",
+      "position": [
+        3680,
+        40
+      ],
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      },
+      "notes": "Remove or disable this node if you want to keep report emails unread after import."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Find unread TikTok report emails",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Brand Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Gmail every 10 minutes": {
+      "main": [
+        [
+          {
+            "node": "Find unread TikTok report emails",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Brand Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find unread TikTok report emails": {
+      "main": [
+        [
+          {
+            "node": "Wait for email search + registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Brand Registry": {
+      "main": [
+        [
+          {
+            "node": "Wait for email search + registry",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wait for email search + registry": {
+      "main": [
+        [
+          {
+            "node": "Extract TikTok report attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract TikTok report attachments": {
+      "main": [
+        [
+          {
+            "node": "Parse CSV/XLSX attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse CSV/XLSX attachment": {
+      "main": [
+        [
+          {
+            "node": "Keep email metadata with each parsed row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep email metadata with each parsed row": {
+      "main": [
+        [
+          {
+            "node": "Normalize TikTok rows to raw-sheet headers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize TikTok rows to raw-sheet headers": {
+      "main": [
+        [
+          {
+            "node": "Has mapping error?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has mapping error?": {
+      "main": [
+        [
+          {
+            "node": "Alert on unmatched TikTok report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is this an ad-level report?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Collect affected brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is this an ad-level report?": {
+      "main": [
+        [
+          {
+            "node": "Prepare ad-level raw row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare account-level raw row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare account-level raw row": {
+      "main": [
+        [
+          {
+            "node": "Upsert Daily_Raw_TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare ad-level raw row": {
+      "main": [
+        [
+          {
+            "node": "Upsert Daily_Raw_TikTok_Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Daily_Raw_TikTok": {
+      "main": [
+        [
+          {
+            "node": "Wait for raw upserts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Daily_Raw_TikTok_Ads": {
+      "main": [
+        [
+          {
+            "node": "Wait for raw upserts",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wait for raw upserts": {
+      "main": [
+        [
+          {
+            "node": "Begin weekly/monthly report refresh",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Begin weekly/monthly report refresh": {
+      "main": [
+        [
+          {
+            "node": "Read Daily_Raw_TikTok for report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Daily_Raw_TikTok_Ads for report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Daily_Raw_TikTok for report": {
+      "main": [
+        [
+          {
+            "node": "Tag account snapshot rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Daily_Raw_TikTok_Ads for report": {
+      "main": [
+        [
+          {
+            "node": "Tag ad snapshot rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag account snapshot rows": {
+      "main": [
+        [
+          {
+            "node": "Wait for both raw snapshots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag ad snapshot rows": {
+      "main": [
+        [
+          {
+            "node": "Wait for both raw snapshots",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wait for both raw snapshots": {
+      "main": [
+        [
+          {
+            "node": "Build weekly and monthly TikTok report tabs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build weekly and monthly TikTok report tabs": {
+      "main": [
+        [
+          {
+            "node": "Write TikTok weekly/monthly report tabs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write TikTok weekly/monthly report tabs": {
+      "main": [
+        [
+          {
+            "node": "Collect successfully imported message IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect successfully imported message IDs": {
+      "main": [
+        [
+          {
+            "node": "Mark imported emails as read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Africa/Cairo"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "description": "Imports unread TikTok scheduled report attachments from Gmail, normalizes them to the Raw Data template, upserts account/ad tabs, then refreshes TikTok monthly and weekly report tabs."
+  },
+  "tags": []
+}
