@@ -41,6 +41,8 @@ It is an email-based alternative to the existing TikTok API workflow (`WF2u TikT
 
 The existing one-off template workflow creates these tabs and writes the headers. Run it once if a raw template copy does not have them.
 
+When the incoming file is an ad-level report, the workflow writes each row to `Daily_Raw_TikTok_Ads` and also creates one aggregated account row per brand/day in `Daily_Raw_TikTok`. This keeps the overview and weekly tabs populated without copying every ad row into the account tab.
+
 ## Matching a TikTok export
 
 The **Normalize TikTok rows to raw-sheet headers** Code node is the mapping layer. It already accepts common TikTok labels such as `Stat Time Day`, `Spend`, `Impressions`, `Reach`, `Clicks (All)`, `Complete Payment`, `Complete Payment Value`, `Purchase ROAS`, `Ad ID`, `Ad Name`, `Campaign Name`, and `Adgroup Name`. Add an alias in that node if TikTok uses a different label in the account.
