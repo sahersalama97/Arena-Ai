@@ -93,8 +93,8 @@
     },
     {
       "parameters": {
-        "mode": "passThrough",
-        "output": "input1"
+        "mode": "chooseBranch",
+        "useDataOfInput": 1
       },
       "id": "merge_prereqs",
       "name": "Wait for email search + registry",
@@ -103,7 +103,7 @@
         -40
       ],
       "type": "n8n-nodes-base.merge",
-      "typeVersion": 3
+      "typeVersion": 3.2
     },
     {
       "parameters": {
@@ -390,8 +390,8 @@
     },
     {
       "parameters": {
-        "mode": "passThrough",
-        "output": "input1"
+        "mode": "chooseBranch",
+        "useDataOfInput": 1
       },
       "id": "merge_writes",
       "name": "Wait for raw upserts",
@@ -400,7 +400,7 @@
         40
       ],
       "type": "n8n-nodes-base.merge",
-      "typeVersion": 3
+      "typeVersion": 3.2
     },
     {
       "parameters": {
@@ -507,8 +507,8 @@
     },
     {
       "parameters": {
-        "mode": "passThrough",
-        "output": "input1"
+        "mode": "chooseBranch",
+        "useDataOfInput": 1
       },
       "id": "merge_snapshots",
       "name": "Wait for both raw snapshots",
@@ -517,7 +517,7 @@
         40
       ],
       "type": "n8n-nodes-base.merge",
-      "typeVersion": 3
+      "typeVersion": 3.2
     },
     {
       "parameters": {
