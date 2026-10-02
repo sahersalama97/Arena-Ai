@@ -73,7 +73,7 @@
         }
       },
       "onError": "continueRegularOutput",
-      "notes": "Requires a System User token with access to every ad account (Business Manager > System Users > assign all ad accounts, or use a Business Manager owned-accounts token). Lists ALL ad accounts the token can see — each one becomes a 'brand' candidate."
+      "notes": "Requires a System User token with access to every ad account (Business Manager > System Users > assign all ad accounts, or use a Business Manager owned-accounts token). Lists ALL ad accounts the token can see \u2014 each one becomes a 'brand' candidate."
     },
     {
       "parameters": {
@@ -171,7 +171,7 @@
           "name": "Google Sheets account"
         }
       },
-      "notes": "New brands land with Status=needs_setup so they don't get synced/reported until you fill TikTok_Advertiser_ID + Report_Email and flip Status to 'active'. This is intentional — avoids silently syncing/reporting on a brand before it's fully configured."
+      "notes": "New brands land with Status=needs_setup so they don't get synced/reported until you fill TikTok_Advertiser_ID + Report_Email and flip Status to 'active'. This is intentional \u2014 avoids silently syncing/reporting on a brand before it's fully configured."
     },
     {
       "parameters": {
@@ -245,6 +245,19 @@
         }
       },
       "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Strip the \"act_\" prefix from Meta_Ad_Account_ID before writing to the Brand Registry\nreturn items.map(item => {\n  const raw = (item.json.Meta_Ad_Account_ID ?? '').toString();\n  return {\n    json: {\n      ...item.json,\n      Meta_Ad_Account_ID: raw.replace(/^act_/, '')\n    }\n  };\n});"
+      },
+      "id": "code3",
+      "name": "Strip act_ prefix",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        192
+      ]
     }
   ],
   "pinData": {},
@@ -319,7 +332,7 @@
       "main": [
         [
           {
-            "node": "Append new brands",
+            "node": "Strip act_ prefix",
             "type": "main",
             "index": 0
           }
@@ -342,6 +355,17 @@
         [
           {
             "node": "Send new-brand alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Strip act_ prefix": {
+      "main": [
+        [
+          {
+            "node": "Append new brands",
             "type": "main",
             "index": 0
           }
