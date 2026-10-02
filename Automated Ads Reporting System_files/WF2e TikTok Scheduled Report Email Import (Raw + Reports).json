@@ -477,21 +477,6 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const seen = new Map();\nfor (const item of $input.all()) {\n  const j = item.json || {};\n  if (!j.Raw_Sheet_ID || seen.has(j.Raw_Sheet_ID)) continue;\n  seen.set(j.Raw_Sheet_ID, {Brand_Name: j.Brand_Name, Raw_Sheet_ID: j.Raw_Sheet_ID, Report_Sheet_ID: j.Report_Sheet_ID || '', Weekly_Report_Sheet_ID: j.Weekly_Report_Sheet_ID || j.Report_Sheet_ID || ''});\n}\nreturn [...seen.values()].map(json => ({json}));"
-      },
-      "id": "affected",
-      "name": "Collect affected brands",
-      "position": [
-        1040,
-        400
-      ],
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "notes": "Only brands present in the incoming email are refreshed; this avoids rewriting every brand's report."
-    },
-    {
-      "parameters": {
         "mode": "chooseBranch",
         "useDataOfInput": 1
       },
@@ -507,7 +492,7 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "return $('Collect affected brands').all().map(i => ({json: i.json}));"
+        "jsCode": "const seen = new Map();\nfor (const item of $('Normalize TikTok rows to raw-sheet headers').all()) {\n  const j = item.json || {};\n  if (j.error || !j.Raw_Sheet_ID || seen.has(j.Raw_Sheet_ID)) continue;\n  seen.set(j.Raw_Sheet_ID, {\n    Brand_Name: j.Brand_Name,\n    Raw_Sheet_ID: j.Raw_Sheet_ID,\n    Report_Sheet_ID: j.Report_Sheet_ID || '',\n    Weekly_Report_Sheet_ID: j.Weekly_Report_Sheet_ID || j.Report_Sheet_ID || ''\n  });\n}\nreturn [...seen.values()].map(json => ({json}));"
       },
       "id": "begin_refresh",
       "name": "Begin weekly/monthly report refresh",
@@ -517,7 +502,7 @@
       ],
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "notes": "This runs after the raw upserts, so report tabs always include the newly imported rows."
+      "notes": "Derives affected brands directly from normalized rows so report refresh does not depend on a parallel branch executing first."
     },
     {
       "parameters": {
@@ -814,11 +799,6 @@
         [
           {
             "node": "Is this an ad-level report?",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Collect affected brands",
             "type": "main",
             "index": 0
           }
