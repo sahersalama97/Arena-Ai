@@ -619,7 +619,8 @@ def sheet_benchmarks(wb):
     title_block(ws, "Benchmarks", "These thresholds decide every Status column in the kit. Retune them per account.", CUR, last_col=8)
     put(ws, "A4", "⚠ The starting numbers below are placeholders so the status columns work on day one — they are not "
                   "industry truth. Replace them with this client's own trailing 90-day range by month three. "
-                  "A benchmark you didn't measure is a guess, and clients can smell a guess.",
+                  "A benchmark you didn't measure is a guess, and clients can smell a guess.   •   Once you have "
+                  "replaced them, type TUNED in cell B28 below so Health Check stops flagging this tab.",
         Font(name="Inter", size=9, bold=True, color=BAD), align=A_LW)
     ws.merge_cells("A4:H5")
     ws.row_dimensions[4].height = 20
@@ -688,6 +689,12 @@ def sheet_benchmarks(wb):
     put(ws, f"A{r}", "How status is decided", f_h1(10))
     put(ws, f"A{r+1}", "Higher is better (CTR, rates, AOV, ROAS, POAS): Strong ≥ F, Target ≥ E, Watch ≥ D, otherwise Weak.", f_small(9))
     put(ws, f"A{r+2}", "Lower is better (CPM, CPC, Frequency, Breakeven ROAS): the same ladder, mirrored.", f_small(9))
+
+    # Machine-readable tuning flag. Health Check row 28 reads THIS cell, so the
+    # nag disappears exactly when the user says the benchmarks are the client's own.
+    put(ws, "A28", "Benchmarks tuning status", f_h2(10), align=A_LI)
+    put(ws, "B28", "PLACEHOLDER", Font(name="Inter", size=10, bold=True, color=BAD), F_WARNBG, align=A_C)
+    put(ws, "C28", "Type TUNED here once the thresholds above are this client's own 90-day numbers.", f_small(9), align=A_LI)
     return ws
 
 
@@ -749,8 +756,8 @@ def sheet_health(wb):
          "A margin outside 0–100% means a cost input is wrong."),
         ("No blank platforms in Fundamentals",       f'=IF(SUMPRODUCT(({FUND}!$A$2:$A${LROWS}<>"")*({FUND}!$B$2:$B${LROWS}=""))>0,"CHECK","OK")',
          "Counts only rows that carry a date -- the empty rows below your data are normal and are ignored."),
-        ("Benchmarks retuned for this account",      f'=IF(Benchmarks!$D$16=0,"CHECK","OK")',
-         "Until you replace the placeholder thresholds, every Status column is a guess."),
+        ("Benchmarks retuned for this account",      f'=IF(Benchmarks!$B$28="TUNED","OK","CHECK")',
+         "The Benchmarks tab still holds the shipped placeholders. Replace them with this client's own range, then set Benchmarks!B28 to TUNED."),
     ]
     for i, (lab, form, why) in enumerate(checks):
         r = 17 + i
