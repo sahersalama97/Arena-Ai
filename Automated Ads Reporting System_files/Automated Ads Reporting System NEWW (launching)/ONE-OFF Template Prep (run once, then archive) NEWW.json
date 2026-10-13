@@ -1,0 +1,1213 @@
+{
+  "name": "ONE-OFF Template Prep (run once, then archive) NEWW",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "af4925c7-3323-4007-8f88-ea424b382edd",
+      "name": "Manual Test",
+      "position": [
+        -288,
+        336
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "title": "Daily_Raw_Meta",
+        "options": {}
+      },
+      "id": "fae9b0de-ca2f-4ab2-9268-0c7b6d7b0202",
+      "name": "Add Daily_Raw_Meta tab",
+      "position": [
+        -32,
+        -16
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "title": "Daily_Raw_Meta_Ads",
+        "options": {}
+      },
+      "id": "b2332bd7-481e-4337-a623-1473bc7e5aeb",
+      "name": "Add Daily_Raw_Meta_Ads tab",
+      "position": [
+        208,
+        -32
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "title": "Daily_Raw_TikTok",
+        "options": {}
+      },
+      "id": "df7f87a0-e416-4f39-902d-216b27bec285",
+      "name": "Add Daily_Raw_TikTok tab",
+      "position": [
+        448,
+        -16
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "title": "Daily_Raw_TikTok_Ads",
+        "options": {}
+      },
+      "id": "21419bb1-fc49-4ae6-a274-360098983819",
+      "name": "Add Daily_Raw_TikTok_Ads tab",
+      "position": [
+        688,
+        -16
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Overview"
+        },
+        "clear": "specificRange",
+        "range": "'Meta Overview'!A5:Z5000"
+      },
+      "id": "4ccbdba0-3b47-440d-9c4d-f70146ca0a14",
+      "name": "Clear Meta Overview data",
+      "position": [
+        -32,
+        416
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Ad Performance"
+        },
+        "clear": "specificRange",
+        "range": "'Meta Ad Performance'!A5:Z5000"
+      },
+      "id": "78849ce1-6318-4971-ae9d-8d096d04a7bd",
+      "name": "Clear Meta Ad Performance data",
+      "position": [
+        208,
+        416
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Creatives Performance"
+        },
+        "clear": "specificRange",
+        "range": "'Meta Creatives Performance'!A5:Z5000"
+      },
+      "id": "70b83ce5-305b-4bad-ad62-4a0afc59bab8",
+      "name": "Clear Meta Creatives Performance data",
+      "position": [
+        448,
+        416
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Weekly"
+        },
+        "clear": "specificRange",
+        "range": "'Meta Weekly'!A5:Z5000"
+      },
+      "id": "02a3aa20-8341-49ed-8962-674ce21ff868",
+      "name": "Clear Meta Weekly data",
+      "position": [
+        688,
+        416
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Overview"
+        },
+        "clear": "specificRange",
+        "range": "'TikTok Overview'!A4:Z5000"
+      },
+      "id": "5091fcd7-9de3-4d6e-bc2b-82b5e973922b",
+      "name": "Clear TikTok Overview data",
+      "position": [
+        928,
+        416
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Ad Performance"
+        },
+        "clear": "specificRange",
+        "range": "'TikTok Ad Performance'!A5:Z5000"
+      },
+      "id": "68697462-63ee-416b-988a-1905203683cb",
+      "name": "Clear TikTok Ad Performance data",
+      "position": [
+        1168,
+        416
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Creatives Performance"
+        },
+        "clear": "specificRange",
+        "range": "'TikTok Creatives Performance'!A4:Z5000"
+      },
+      "id": "3a366437-c9ba-45ae-b453-136da2d09162",
+      "name": "Clear TikTok Creatives Performance data",
+      "position": [
+        1408,
+        416
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Weekly"
+        },
+        "clear": "specificRange",
+        "range": "'TikTok Weekly'!A4:Z5000"
+      },
+      "id": "2088b988-effd-42fe-a0b2-ebf763c62498",
+      "name": "Clear TikTok Weekly data",
+      "position": [
+        1648,
+        416
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Combined"
+        },
+        "clear": "specificRange",
+        "range": "Combined!A5:Z5000"
+      },
+      "id": "12875a6e-44fe-4334-84e4-5ebaefa48955",
+      "name": "Clear Combined data",
+      "position": [
+        1888,
+        416
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Overview"
+        }
+      },
+      "id": "52285f5e-293f-404d-9cb6-33d63648961f",
+      "name": "B: remove Meta Overview",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        928,
+        624
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Ad Performance"
+        }
+      },
+      "id": "db0ef228-2f60-4367-941c-51fae2af7124",
+      "name": "B: remove Meta Ad Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1168,
+        624
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Creatives Performance"
+        }
+      },
+      "id": "860891ce-b303-4f5c-a529-c7646a90840f",
+      "name": "B: remove Meta Creatives Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1408,
+        624
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Meta Weekly"
+        }
+      },
+      "id": "6273ab8f-abc4-46f9-bd67-e0f4699d8a3f",
+      "name": "B: remove Meta Weekly",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1648,
+        624
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Overview"
+        }
+      },
+      "id": "60316c2e-e0b2-4b15-9847-870b32c9cf36",
+      "name": "B: remove TikTok Overview",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1888,
+        624
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Ad Performance"
+        }
+      },
+      "id": "489be2bf-5dd7-4329-9f94-6afdc5255b6f",
+      "name": "B: remove TikTok Ad Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2128,
+        624
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Creatives Performance"
+        }
+      },
+      "id": "432e4276-b36c-408d-9879-7f8105373d38",
+      "name": "B: remove TikTok Creatives Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2368,
+        624
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "TikTok Weekly"
+        }
+      },
+      "id": "79a106e6-599f-4ff0-bbb7-c77278ec01e9",
+      "name": "B: remove TikTok Weekly",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2608,
+        624
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "remove",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Combined"
+        }
+      },
+      "id": "f1d47eb4-0b26-46ef-bc98-777f7a7e4a2c",
+      "name": "B: remove Combined",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2848,
+        624
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_Meta"
+        },
+        "clear": "specificRange",
+        "range": "Daily_Raw_Meta!A1:Z10"
+      },
+      "id": "4a4130e4-2caa-4c66-a6d7-3cf6a31c50f6",
+      "name": "Clear Daily_Raw_Meta (wrong header)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -32,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_Meta_Ads"
+        },
+        "clear": "specificRange",
+        "range": "Daily_Raw_Meta_Ads!A1:Z10"
+      },
+      "id": "72ca89c5-3344-48ac-9291-db42b1dadae2",
+      "name": "Clear Daily_Raw_Meta_Ads (wrong header)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok"
+        },
+        "clear": "specificRange",
+        "range": "Daily_Raw_TikTok!A1:Z10"
+      },
+      "id": "073fa7d0-611f-415b-978a-0b9672c50620",
+      "name": "Clear Daily_Raw_TikTok (wrong header)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_TikTok_Ads"
+        },
+        "clear": "specificRange",
+        "range": "Daily_Raw_TikTok_Ads!A1:Z10"
+      },
+      "id": "45a9e344-8b6f-4dfc-aeec-58d06f22e31b",
+      "name": "Clear Daily_Raw_TikTok_Ads (wrong header)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        688,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs/values/{{ encodeURIComponent(\"'Daily_Raw_Meta'!A1\") }}?valueInputOption=RAW",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ values: [[\"Date\",\"Spend\",\"Impressions\",\"Reach\",\"Frequency\",\"CPM\",\"Clicks\",\"CTR_Pct\",\"Adds_to_Cart\",\"Initiate_Checkout\",\"Purchases\",\"Purchases_Value\",\"ROAS\",\"AOV\",\"Purchase_CVR_Pct\",\"Pulled_At\"]] }) }}",
+        "options": {}
+      },
+      "id": "7acac54a-1f86-4d9d-bb76-eb4467237e39",
+      "name": "Header Daily_Raw_Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -32,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs/values/{{ encodeURIComponent(\"'Daily_Raw_Meta_Ads'!A1\") }}?valueInputOption=RAW",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ values: [[\"Date\",\"Ad_ID\",\"Ad_Name\",\"AdSet_Name\",\"Campaign_Name\",\"Creative_Key\",\"Spend\",\"Impressions\",\"Reach\",\"Frequency\",\"CPM\",\"Clicks\",\"CTR_Pct\",\"LPV\",\"Adds_to_Cart\",\"Initiate_Checkout\",\"Purchases\",\"Purchases_Value\",\"ROAS\",\"AOV\",\"Purchase_CVR_Pct\",\"Pulled_At\"]] }) }}",
+        "options": {}
+      },
+      "id": "0288c73e-5b2f-4eff-8f11-13593e5eb9d2",
+      "name": "Header Daily_Raw_Meta_Ads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs/values/{{ encodeURIComponent(\"'Daily_Raw_TikTok'!A1\") }}?valueInputOption=RAW",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ values: [[\"Date\",\"Spend\",\"Impressions\",\"Reach\",\"CPM\",\"Clicks\",\"CTR_Pct\",\"Frequency\",\"Profile_Visits\",\"Follows\",\"Adds_to_Cart\",\"Initiate_Checkout\",\"Purchases\",\"Purchases_Value\",\"ROAS\",\"AOV\",\"Purchase_CVR_Pct\",\"Pulled_At\"]] }) }}",
+        "options": {}
+      },
+      "id": "62188a92-a6d0-43c6-a5b7-e0e2bfbfa17c",
+      "name": "Header Daily_Raw_TikTok",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs/values/{{ encodeURIComponent(\"'Daily_Raw_TikTok_Ads'!A1\") }}?valueInputOption=RAW",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ values: [[\"Date\",\"Ad_ID\",\"Ad_Name\",\"Campaign_Name\",\"AdGroup_Name\",\"Creative_Key\",\"Spend\",\"Impressions\",\"Reach\",\"CPM\",\"Clicks\",\"CTR_Pct\",\"Profile_Visits\",\"Follows\",\"Adds_to_Cart\",\"Initiate_Checkout\",\"Purchases\",\"Purchases_Value\",\"ROAS\",\"AOV\",\"Purchase_CVR_Pct\",\"Pulled_At\"]] }) }}",
+        "options": {}
+      },
+      "id": "ef75961c-5b6a-49e9-badb-e3a71cbf7347",
+      "name": "Header Daily_Raw_TikTok_Ads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        688,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Add Daily_Raw_Meta tab": {
+      "main": [
+        [
+          {
+            "node": "Add Daily_Raw_Meta_Ads tab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Daily_Raw_Meta_Ads tab": {
+      "main": [
+        [
+          {
+            "node": "Add Daily_Raw_TikTok tab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Daily_Raw_TikTok tab": {
+      "main": [
+        [
+          {
+            "node": "Add Daily_Raw_TikTok_Ads tab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Meta Overview data": {
+      "main": [
+        [
+          {
+            "node": "Clear Meta Ad Performance data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Meta Ad Performance data": {
+      "main": [
+        [
+          {
+            "node": "Clear Meta Creatives Performance data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Meta Creatives Performance data": {
+      "main": [
+        [
+          {
+            "node": "Clear Meta Weekly data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Meta Weekly data": {
+      "main": [
+        [
+          {
+            "node": "Clear TikTok Overview data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear TikTok Overview data": {
+      "main": [
+        [
+          {
+            "node": "Clear TikTok Ad Performance data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear TikTok Ad Performance data": {
+      "main": [
+        [
+          {
+            "node": "Clear TikTok Creatives Performance data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear TikTok Creatives Performance data": {
+      "main": [
+        [
+          {
+            "node": "Clear TikTok Weekly data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear TikTok Weekly data": {
+      "main": [
+        [
+          {
+            "node": "Clear Combined data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove Meta Overview": {
+      "main": [
+        [
+          {
+            "node": "B: remove Meta Ad Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove Meta Ad Performance": {
+      "main": [
+        [
+          {
+            "node": "B: remove Meta Creatives Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove Meta Creatives Performance": {
+      "main": [
+        [
+          {
+            "node": "B: remove Meta Weekly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove Meta Weekly": {
+      "main": [
+        [
+          {
+            "node": "B: remove TikTok Overview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove TikTok Overview": {
+      "main": [
+        [
+          {
+            "node": "B: remove TikTok Ad Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove TikTok Ad Performance": {
+      "main": [
+        [
+          {
+            "node": "B: remove TikTok Creatives Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove TikTok Creatives Performance": {
+      "main": [
+        [
+          {
+            "node": "B: remove TikTok Weekly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "B: remove TikTok Weekly": {
+      "main": [
+        [
+          {
+            "node": "B: remove Combined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Clear Daily_Raw_Meta (wrong header)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Daily_Raw_Meta (wrong header)": {
+      "main": [
+        [
+          {
+            "node": "Header Daily_Raw_Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Header Daily_Raw_Meta": {
+      "main": [
+        [
+          {
+            "node": "Clear Daily_Raw_Meta_Ads (wrong header)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Daily_Raw_Meta_Ads (wrong header)": {
+      "main": [
+        [
+          {
+            "node": "Header Daily_Raw_Meta_Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Header Daily_Raw_Meta_Ads": {
+      "main": [
+        [
+          {
+            "node": "Clear Daily_Raw_TikTok (wrong header)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Daily_Raw_TikTok (wrong header)": {
+      "main": [
+        [
+          {
+            "node": "Header Daily_Raw_TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Header Daily_Raw_TikTok": {
+      "main": [
+        [
+          {
+            "node": "Clear Daily_Raw_TikTok_Ads (wrong header)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Daily_Raw_TikTok_Ads (wrong header)": {
+      "main": [
+        [
+          {
+            "node": "Header Daily_Raw_TikTok_Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Header Daily_Raw_TikTok_Ads": {
+      "main": [
+        [
+          {
+            "node": "Clear Meta Overview data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f0ca2e95-889f-42ff-919c-87f4738098c8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9df071be3540d8b54994d231aeb8bda34843d4fc0415c70e3399690bf7e7c6ec"
+  },
+  "nodeGroups": [],
+  "id": "60M9mVkNWhdBtVGm",
+  "tags": []
+}

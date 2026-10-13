@@ -1,0 +1,476 @@
+{
+  "name": "WF1u Meta Account-Level Daily Sync (All Brands) NEWW",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "fe8e248a-da8e-479e-a579-724890c8aeb7",
+      "name": "Manual Test",
+      "position": [
+        -4112,
+        752
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "9a86abc1-2098-418c-8514-19218d29baea",
+      "name": "Daily 06:00",
+      "position": [
+        -4112,
+        960
+      ],
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "id": "f9a1fb62-eb56-4e86-8131-618f5acd18a6",
+      "name": "Read Brand Registry",
+      "position": [
+        -3872,
+        848
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.filter(i => (i.json.Status||'').toLowerCase()==='active' && i.json.Meta_Ad_Account_ID && i.json.Raw_Sheet_ID);"
+      },
+      "id": "0c43465a-8a96-48b6-b7e7-0cdc4f177402",
+      "name": "Filter brands ready to sync",
+      "position": [
+        -3616,
+        848
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "89a6cfd7-bffa-48b3-aee6-f0f40b3ea27a",
+      "name": "Loop brands",
+      "position": [
+        -3376,
+        848
+      ],
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "// First 8 days of a month: re-pull the whole previous month so late conversions\n// (7-day click attribution) are final. After that: month-to-date.\nconst until = $today.minus({ days: 1 });\nconst monthStart = $today.startOf('month');\nconst since = $today.day <= 8 ? monthStart.minus({ months: 1 }) : monthStart;\nreturn [{ json: { since: since.toISODate(), until: until.toISODate(), time_range: JSON.stringify({ since: since.toISODate(), until: until.toISODate() }) } }];"
+      },
+      "id": "4a4d0500-c0eb-4d25-8050-da32faaf64ab",
+      "name": "Date window (current month)",
+      "position": [
+        -3136,
+        720
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "notes": "Days 1-8 of a month: previous month 1st through yesterday (final re-pull). Day 9 onward: current month 1st through yesterday."
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v21.0/act_{{ $('Loop brands').item.json.Meta_Ad_Account_ID.toString().replace(/^act_/,'') }}/insights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "spend,impressions,reach,frequency,cpm,unique_outbound_clicks,unique_outbound_clicks_ctr,outbound_clicks,actions,action_values,date_start,date_stop"
+            },
+            {
+              "name": "level",
+              "value": "account"
+            },
+            {
+              "name": "time_increment",
+              "value": "1"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "use_unified_attribution_setting",
+              "value": "true"
+            },
+            {
+              "name": "time_range",
+              "value": "={{ $json.time_range }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "id": "11a11113-b170-484f-9b84-4d3b96dda8a5",
+      "maxTries": 3,
+      "name": "Meta Insights yesterday",
+      "position": [
+        -2896,
+        720
+      ],
+      "retryOnFail": true,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qQUVSfCeWtFUWkkM",
+          "name": "Meta-Access Tokens"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "Uses Meta ad set/unified attribution setting so purchase/action totals align more closely with Ads Manager columns."
+    },
+    {
+      "parameters": {
+        "jsCode": "const CONFIG={purchase:['offsite_conversion.fb_pixel_purchase','omni_purchase','purchase'],purchase_value:['offsite_conversion.fb_pixel_purchase','omni_purchase','purchase'],atc:['offsite_conversion.fb_pixel_add_to_cart','omni_add_to_cart','add_to_cart'],ic:['offsite_conversion.fb_pixel_initiate_checkout','omni_initiated_checkout','initiate_checkout']};\nfunction num(v){if(v==null||v==='')return 0;const n=Number(v);return Number.isFinite(n)?n:0;}\nfunction actionSum(arr,types){if(!Array.isArray(arr))return 0;let t=0;for(const a of arr){if(types.includes(a.action_type))t+=num(a.value);}return t;}\nfunction pickType(arr,prio){if(!Array.isArray(arr))return null;for(const t of prio){if(arr.some(a=>a.action_type===t))return t;}return null;}\nfunction pickSum(arr,prio){const t=pickType(arr,prio);return t?actionSum(arr,[t]):0;}\nfunction outboundClicks(d){if(Array.isArray(d.outbound_clicks))return actionSum(d.outbound_clicks,['outbound_click']);return num(d.outbound_clicks);}\nfunction outboundCtr(d,clicks,imps){return imps?(clicks/imps)*100:0;}\nfunction round(n,p){const f=10**p;return Math.round(n*f)/f;}\nfunction flattenOne(d){const spend=num(d.spend),impressions=num(d.impressions),reach=num(d.reach);const frequency=num(d.frequency)||(reach?impressions/reach:0);const cpm=num(d.cpm)||(impressions?(spend/impressions)*1000:0);const clicks=outboundClicks(d);const ctr=outboundCtr(d,clicks,impressions);const atc=pickSum(d.actions,CONFIG.atc);const ic=pickSum(d.actions,CONFIG.ic);const pType=pickType(d.actions,CONFIG.purchase);const purchases=pType?actionSum(d.actions,[pType]):0;const purchasesValue=(pType&&pickType(d.action_values,[pType]))?actionSum(d.action_values,[pType]):pickSum(d.action_values,CONFIG.purchase_value);const roas=spend?purchasesValue/spend:0;const aov=purchases?purchasesValue/purchases:0;const cvr=clicks?(purchases/clicks)*100:0;return{Date:d.date_start||d.date_stop||'',Spend:round(spend,2),Impressions:impressions,Reach:reach,Frequency:round(frequency,2),CPM:round(cpm,2),Clicks:clicks,CTR_Pct:round(ctr,4),Adds_to_Cart:atc,Initiate_Checkout:ic,Purchases:purchases,Purchases_Value:round(purchasesValue,2),ROAS:round(roas,4),AOV:round(aov,2),Purchase_CVR_Pct:round(cvr,4),Pulled_At:new Date().toISOString()};}\nconst out=[];for(const item of items){const j=item.json;if(j&&j.error){out.push({json:{error:JSON.stringify(j.error)}});continue;}const rows=Array.isArray(j.data)?j.data:[];for(const row of rows){if(!row||(row.spend==null&&row.impressions==null&&!row.date_start))continue;out.push({json:flattenOne(row)});}}\nif(!out.length)return[{json:{error:'No insights rows returned'}}];\nreturn out;"
+      },
+      "id": "5f455283-1509-47bb-95c7-92561f17f85a",
+      "name": "Flatten metrics",
+      "position": [
+        -2656,
+        720
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "err",
+              "leftValue": "={{ $json.error }}",
+              "operator": {
+                "operation": "exists",
+                "singleValue": true,
+                "type": "string"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "5cfd3cd6-1309-48f5-92de-783a4ae6daf0",
+      "name": "Has error?",
+      "position": [
+        -2416,
+        720
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Loop brands').item.json.Raw_Sheet_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Daily_Raw_Meta"
+        },
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "Date"
+          ],
+          "schema": [],
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "b52f69ae-d86b-4289-b5d7-c8a6b2f51a89",
+      "name": "Upsert Daily_Raw_Meta",
+      "position": [
+        -2176,
+        640
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "sahersalama97@gmail.com",
+        "subject": "=Meta Daily Sync FAILED - {{ $('Loop brands').item.json.Brand_Name }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "94a1f108-40e3-4ceb-920a-432556ea049e",
+      "name": "Email failure alert",
+      "position": [
+        -2176,
+        896
+      ],
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "webhookId": "26dc0e8e-e972-4c23-bf0e-2a20b338075f",
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -3728,
+        544
+      ],
+      "id": "e0317433-210d-4a57-9709-5be215950ad7",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "sahersalama97@gmail.com",
+        "subject": "Error in WF1FU",
+        "message": "={{ $json.execution.lastNodeExecuted }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -3504,
+        544
+      ],
+      "id": "60d1c02b-5df1-4135-9f52-f7ca8f74d2cb",
+      "name": "Send a message",
+      "webhookId": "1721312b-b3b7-4dca-b222-a1101bf784ad",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zzQuQyhvHs6xuSu1",
+          "name": "n8n Gmail TikTok Reports"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Read Brand Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 06:00": {
+      "main": [
+        [
+          {
+            "node": "Read Brand Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Brand Registry": {
+      "main": [
+        [
+          {
+            "node": "Filter brands ready to sync",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter brands ready to sync": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop brands": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Date window (current month)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date window (current month)": {
+      "main": [
+        [
+          {
+            "node": "Meta Insights yesterday",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meta Insights yesterday": {
+      "main": [
+        [
+          {
+            "node": "Flatten metrics",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email failure alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten metrics": {
+      "main": [
+        [
+          {
+            "node": "Has error?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has error?": {
+      "main": [
+        [
+          {
+            "node": "Email failure alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upsert Daily_Raw_Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Daily_Raw_Meta": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email failure alert": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0b527514-5948-4c45-9553-cc54899be7bf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9df071be3540d8b54994d231aeb8bda34843d4fc0415c70e3399690bf7e7c6ec"
+  },
+  "nodeGroups": [],
+  "id": "Fz0F38O2cX7MoLrt",
+  "tags": []
+}
