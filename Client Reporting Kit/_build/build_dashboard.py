@@ -500,7 +500,9 @@ def sheet_dashboard(wb):
             put(ws, f"C{r}", rate, f_calc(10), fmt=F_PCT, align=A_C)
             put(ws, f"D{r}", f"=Benchmarks!$E${brow}", f_small(9), fmt=F_PCT, align=A_C)
             put(ws, f"E{r}", f'=IFERROR(INDEX(Benchmarks!$G$7:$G$21,{brow-6}),"")', f_calc(9), align=A_C)
-            put(ws, f"F{r}", f'=REPT("█",ROUND(20*IFERROR(C{r},0),0))',
+            # Bar is relative to THIS step's target, so steps with very different
+            # natural sizes are still comparable and short rates don't vanish.
+            put(ws, f"F{r}", f'=REPT("█",ROUND(20*IFERROR(MIN(1,C{r}/D{r}),0),0))',
                 Font(name="Inter", size=9, color=ACCENT_DK), align=A_LI)
         else:
             for col in "CDEF":
@@ -510,10 +512,10 @@ def sheet_dashboard(wb):
     r = 26
     put(ws, f"A{r}", "Meta click → landing page", f_body(9.5), align=A_LI)
     put(ws, f"B{r}", f"={S('G')}", f_calc(9.5), fmt=F_INT, align=A_C)
-    put(ws, f"C{r}", "='KPI Calc'!B27", f_calc(9.5), fmt=F_PCT, align=A_C)
+    put(ws, f"C{r}", '=IF(B26=0,"—",\'KPI Calc\'!B27)', f_calc(9.5), fmt=F_PCT, align=A_C)
     put(ws, f"D{r}", "=Benchmarks!$E$10", f_small(9), fmt=F_PCT, align=A_C)
     put(ws, f"E{r}", '=IFERROR(INDEX(Benchmarks!$G$7:$G$21,4),"")', f_calc(9), align=A_C)
-    put(ws, f"F{r}", '=REPT("█",ROUND(20*IFERROR(C26,0),0))',
+    put(ws, f"F{r}", '=REPT("█",ROUND(20*IFERROR(MIN(1,C26/D26),0),0))',
         Font(name="Inter", size=9, color=ACCENT_DK), align=A_LI)
     put(ws, f"G{r}", "Meta only — TikTok doesn't report landing page views",
         f_tiny(8), align=A_LI)
@@ -526,15 +528,19 @@ def sheet_dashboard(wb):
         '("&ROUND(\'KPI Calc\'!B30,2)&"x). "&IF(\'KPI Calc\'!B30>=\'KPI Calc\'!B35,"That is above the "&ROUND(\'KPI Calc\'!B35,2)&"x breakeven, so media paid for itself this period.",'
         '"That is below the "&ROUND(\'KPI Calc\'!B35,2)&"x breakeven — media did not pay for itself this period and we need to talk about that directly.")',
 
-        '="Movement: spend "&IF(\'KPI Calc\'!E9>=0,"up","down")&" "&TEXT(ABS(\'KPI Calc\'!E9),"0%")&" while revenue "&IF(\'KPI Calc\'!E17>=0,"rose","fell")&" "&TEXT(ABS(\'KPI Calc\'!E17),"0%")&", so ROAS "&IF(\'KPI Calc\'!B30>=\'KPI Calc\'!C30,"improved","slipped")&" from "&ROUND(\'KPI Calc\'!C30,2)&"x to "&ROUND(\'KPI Calc\'!B30,2)&"x. Costs per thousand impressions went from "&TEXT(ROUND(\'KPI Calc\'!C19,0),"#,##0")&" to "&TEXT(ROUND(\'KPI Calc\'!B19,0),"#,##0")&".",',
+        '="Movement: spend "&IF(\'KPI Calc\'!E9>=0,"up","down")&" "&TEXT(ABS(\'KPI Calc\'!E9),"0%")&" while revenue "&IF(\'KPI Calc\'!E17>=0,"rose","fell")&" "&TEXT(ABS(\'KPI Calc\'!E17),"0%")&", so ROAS "&IF(\'KPI Calc\'!B30>=\'KPI Calc\'!C30,"improved","slipped")&" from "&ROUND(\'KPI Calc\'!C30,2)&"x to "&ROUND(\'KPI Calc\'!B30,2)&"x. Costs per thousand impressions went from "&TEXT(ROUND(\'KPI Calc\'!C19,0),"#,##0")&" to "&TEXT(ROUND(\'KPI Calc\'!B19,0),"#,##0")&"."',
 
         '="Where the money went: "&TEXT(\'Dashboard\'!G15,"0%")&" of budget on Meta returning "&ROUND(\'Dashboard\'!D15,2)&"x, and "&TEXT(\'Dashboard\'!G16,"0%")&" on TikTok returning "&ROUND(\'Dashboard\'!D16,2)&"x. "&IF(\'Dashboard\'!D15>\'Dashboard\'!D16,"Meta is the more efficient channel this period.","TikTok is the more efficient channel this period.")',
 
         '="Efficiency read: CPM "&TEXT(ROUND(\'KPI Calc\'!B19,0),"#,##0")&", CTR "&TEXT(\'KPI Calc\'!B21,"0.00%")&", click-to-purchase "&TEXT(\'KPI Calc\'!B26,"0.00%")&", AOV "&TEXT(ROUND(\'KPI Calc\'!B29,0),"#,##0")&". '
-        'Frequency is "&ROUND(\'KPI Calc\'!B22,2)&", "&IF(\'KPI Calc\'!B22>3.5,"which is high enough that creative fatigue is now a budget risk — fresh assets before we scale.","which leaves room to add budget without hitting fatigue.")',
+        'Frequency is "&ROUND(\'KPI Calc\'!B22,2)&", "&IF(\'KPI Calc\'!B22>3.5,'
+        '"which is high enough that creative fatigue is now a budget risk — fresh assets before we scale.",'
+        'IF(\'KPI Calc\'!B26<\'KPI Calc\'!C26*0.85,'
+        '"which is below the fatigue line, so this is a conversion problem rather than a fatigue one: click-to-purchase fell from "&TEXT(\'KPI Calc\'!C26,"0.00%")&" to "&TEXT(\'KPI Calc\'!B26,"0.00%")&". Fix traffic quality and the landing page before adding budget.",'
+        '"which leaves room to add budget without hitting fatigue."))',
 
         '="Cost per purchase is "&TEXT(ROUND(\'KPI Calc\'!B28,0),"#,##0")&" against an AOV of "&TEXT(ROUND(\'KPI Calc\'!B29,0),"#,##0")&". '
-        'At a "&TEXT(\'KPI Calc\'!B33,"0.0%")&" contribution margin, breakeven ROAS is "&ROUND(\'KPI Calc\'!B35,2)&"x, and headroom before we hit it is roughly "&TEXT(ROUND(MAX(0,\'KPI Calc\'!B17*\'KPI Calc\'!B33-\'KPI Calc\'!B9),0),"#,##0")&" more in spend at today\'s efficiency.",',
+        'At a "&TEXT(\'KPI Calc\'!B33,"0.0%")&" contribution margin, breakeven ROAS is "&ROUND(\'KPI Calc\'!B35,2)&"x, and headroom before we hit it is roughly "&TEXT(ROUND(MAX(0,\'KPI Calc\'!B17*\'KPI Calc\'!B33-\'KPI Calc\'!B9),0),"#,##0")&" more in spend at today\'s efficiency."',
     ]
     for i, t in enumerate(notes):
         r = 29 + i
@@ -750,6 +756,8 @@ def sheet_health(wb):
          "Sums ad-level spend for the SAME dates as the period, then compares it with account-level spend. More than 5% apart means the ad-level export is incomplete."),
         ("Ad-level purchases reconcile",             f'=IF(ABS(SUMIFS(\'{AD}\'!$J$2:$J${LROWS},\'{AD}\'!$A$2:$A${LROWS},">="&{KCc}$B$4,\'{AD}\'!$A$2:$A${LROWS},"<="&{KCc}$C$4)-{KCc}$B$16)/MAX(1,{KCc}$B$16)>0.08,"CHECK","OK")',
          "Ad-level and account-level purchase counts should be close over the same dates."),
+        ("Checkout does not exceed add to cart",      f'=IF({KCc}$B$15>{KCc}$B$14,"CHECK","OK")',
+         "Initiate-checkout above add-to-cart breaks the funnel ladder. Usually a buy-now button that skips the cart, or events that are counted on the wrong step — confirm which before you quote the funnel."),
         ("Business inputs are filled in",            f'=IF(OR({KCc}$J$5<=0,{KCc}$J$7<=0),"FIX","OK")',
          "COGS % and shipping per order drive every profit number in the kit."),
         ("Contribution margin is plausible",         f'=IF(OR({KCc}$B$33<=0,{KCc}$B$33>=1),"CHECK","OK")',

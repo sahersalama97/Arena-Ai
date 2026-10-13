@@ -79,6 +79,20 @@ for r in range(2, tiktok.max_row + 1):
                  num(tiktok.cell(r, 13).value),  # Purchases
                  num(tiktok.cell(r, 14).value)])  # Purchases_Value
 
+# The account-level Meta tab has no LPV column, but the AD-level tab does, and
+# the kit's click-to-landing-page metric needs it. Sum the ad-level LPV by date.
+meta_lpv = {}
+for r in range(2, meta_ads.max_row + 1):
+    d = as_date(meta_ads.cell(r, 1).value)
+    if not d:
+        continue
+    meta_lpv[d] = meta_lpv.get(d, 0.0) + num(meta_ads.cell(r, 14).value)   # N = LPV
+filled = 0
+for row in fund:
+    if row[1] == "Meta" and meta_lpv.get(row[0]):
+        row[6] = meta_lpv[row[0]]
+        filled += 1
+
 fund.sort(key=lambda x: (x[0], x[1]))
 
 # ================================================================== AD DATA
@@ -190,24 +204,32 @@ ws["I4"] = "  ⚠ ASSUMED COSTS — REPLACE"
 ws["I4"].font = Font(name="Inter", size=10, bold=True, color="B91C1C")
 
 # --- Ad Performance: replace the sample roster with the real top 10 by spend
+in_period = [a for a in ads if CUR_START <= a[0] <= CUR_END]
 by_ad = {}
-for a in ads:
+for a in in_period:
     k = (a[1], a[2])
-    d = by_ad.setdefault(k, [0.0, 0.0])
-    d[0] += a[6]
-    d[1] += a[10]
-top = sorted(by_ad.items(), key=lambda kv: -kv[1][0])[:10]
+    d = by_ad.setdefault(k, dict(spend=0.0, rev=0.0, camp=a[3], ck=a[5]))
+    d["spend"] += a[6]
+    d["rev"] += a[10]
+    if a[3]:
+        d["camp"] = a[3]
+    if a[5]:
+        d["ck"] = a[5]
+# Rank on the period being reported, NOT lifetime spend -- otherwise ads that
+# only ran in the comparison weeks outrank the ones that won this period, and
+# they show up with zeroes in the table.
+top = sorted(by_ad.items(), key=lambda kv: -kv[1]["spend"])[:10]
 
 ws = wb["Ad Performance"]
 for r in range(6, ws.max_row + 1):
     for c in range(1, 15):
         ws.cell(r, c).value = None
-for i, ((plat, name), (spend, revenue)) in enumerate(top):
+for i, ((plat, name), info) in enumerate(top):
     r = 6 + i
     ws.cell(r, 1).value = name
     ws.cell(r, 2).value = plat
-    for c in (3, 4):
-        ws.cell(r, c).value = None
+    ws.cell(r, 3).value = info["camp"]
+    ws.cell(r, 4).value = info["ck"]
     ws.cell(r, 5).value = f"={('SUMIFS' if True else '')}('Ad Data'!$G$2:$G$6000,'Ad Data'!$C$2:$C$6000,$A{r},'Ad Data'!$A$2:$A$6000,\">=\"&'KPI Calc'!$B$4,'Ad Data'!$A$2:$A$6000,\"<=\"&'KPI Calc'!$C$4)"
     ws.cell(r, 6).value = f"=SUMIFS('Ad Data'!$H$2:$H$6000,'Ad Data'!$C$2:$C$6000,$A{r},'Ad Data'!$A$2:$A$6000,\">=\"&'KPI Calc'!$B$4,'Ad Data'!$A$2:$A$6000,\"<=\"&'KPI Calc'!$C$4)"
     ws.cell(r, 7).value = f"=SUMIFS('Ad Data'!$I$2:$I$6000,'Ad Data'!$C$2:$C$6000,$A{r},'Ad Data'!$A$2:$A$6000,\">=\"&'KPI Calc'!$B$4,'Ad Data'!$A$2:$A$6000,\"<=\"&'KPI Calc'!$C$4)"
@@ -254,4 +276,5 @@ wb.save(OUT)
 print("\nwrote", OUT)
 print(f"  Fundamentals rows: {len(fund)}")
 print(f"  Ad Data rows:      {len(ads)}")
-print(f"  Top ads written:   {len(top)}")
+print(f"  Top ads written:   {len(top)} (ranked on {CUR_START}..{CUR_END})")
+print(f"  Meta LPV filled:   {filled} of {len([f for f in fund if f[1]=='Meta'])} Meta days")
