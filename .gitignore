@@ -7,3 +7,6 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Client exports pulled from Google Drive (contains real client data)
+google_drive/

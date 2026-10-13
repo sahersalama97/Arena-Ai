@@ -155,9 +155,10 @@ def sheet_start(wb):
                     hstack("m", "Meta", "2,3,4,7", "9,10,11,12"),
                     hstack("t", "TikTok", "2,3,4,6", "11,12,13,14")))
 
-    put(ws, f"B{r}", "Formula", f_h2(10), align=A_LI)
-    c = put(ws, f"C{r}", stack, Font(name="Consolas", size=8.5, color=INK), F_PANEL, align=A_LW)
-    ws.row_dimensions[r].height = 84
+    put(ws, f"B{r}", "Formula  ▸  copy this whole cell  (optional)", f_h2(10), align=A_LI)
+    c = put(ws, f"C{r}", stack, Font(name="Consolas", size=8.5, color=INK), F_PANEL, align=A_LW,
+            literal=True)
+    autofit_row(ws, f"C{r}", stack)
     r += 1
     put(ws, f"B{r}", "Note", f_small(9), align=A_LI)
     put(ws, f"C{r}", "Google Sheets only — IMPORTRANGE does not exist in Excel, even Excel 365. In Excel, use "
@@ -190,8 +191,9 @@ def sheet_start(wb):
            "  SUMIF(IMPORTRANGE($N$1,\"'Daily_Raw_Meta_Ads'!A$2:A\"),$A$2:$A,\n"
            "        IMPORTRANGE($N$1,\"'Daily_Raw_Meta_Ads'!N$2:N\"))))")
     put(ws, f"B{r}", "LPV formula", f_small(9), align=A_LI)
-    put(ws, f"C{r}", lpv, Font(name="Consolas", size=8.5, color=INK_SOFT), F_PANEL, align=A_LW)
-    ws.row_dimensions[r].height = 44
+    put(ws, f"C{r}", lpv, Font(name="Consolas", size=8.5, color=INK_SOFT), F_PANEL, align=A_LW,
+        literal=True)
+    autofit_row(ws, f"C{r}", lpv)
     r += 1
 
     put(ws, f"B{r}", "If the numbers look wrong", f_small(9), align=A_LI)
@@ -737,16 +739,16 @@ def sheet_health(wb):
          "Reach is deduplicated, so this is a hard rule."),
         ("Revenue is present",                       f'=IF({KCc}$B$17<=0,"FIX","OK")',
          "Without purchase value there is no ROAS, no AOV and no story to tell."),
-        ("Ad spend reconciles to ad-level spend",    f'=IF(ABS(SUM(\'{AD}\'!$G$2:$G${LROWS})-{KCc}$B$9)/MAX(1,{KCc}$B$9)>0.05,"CHECK","OK")',
-         "More than 5% apart means the ad-level export is incomplete or a different date range."),
-        ("Ad-level purchases reconcile",             f'=IF(ABS(SUM(\'{AD}\'!$J$2:$J${LROWS})-{KCc}$B$16)/MAX(1,{KCc}$B$16)>0.08,"CHECK","OK")',
-         "Ad-level and account-level purchase counts should be close."),
+        ("Ad spend reconciles to ad-level spend",    f'=IF(ABS(SUMIFS(\'{AD}\'!$G$2:$G${LROWS},\'{AD}\'!$A$2:$A${LROWS},">="&{KCc}$B$4,\'{AD}\'!$A$2:$A${LROWS},"<="&{KCc}$C$4)-{KCc}$B$9)/MAX(1,{KCc}$B$9)>0.05,"CHECK","OK")',
+         "Sums ad-level spend for the SAME dates as the period, then compares it with account-level spend. More than 5% apart means the ad-level export is incomplete."),
+        ("Ad-level purchases reconcile",             f'=IF(ABS(SUMIFS(\'{AD}\'!$J$2:$J${LROWS},\'{AD}\'!$A$2:$A${LROWS},">="&{KCc}$B$4,\'{AD}\'!$A$2:$A${LROWS},"<="&{KCc}$C$4)-{KCc}$B$16)/MAX(1,{KCc}$B$16)>0.08,"CHECK","OK")',
+         "Ad-level and account-level purchase counts should be close over the same dates."),
         ("Business inputs are filled in",            f'=IF(OR({KCc}$J$5<=0,{KCc}$J$7<=0),"FIX","OK")',
          "COGS % and shipping per order drive every profit number in the kit."),
         ("Contribution margin is plausible",         f'=IF(OR({KCc}$B$33<=0,{KCc}$B$33>=1),"CHECK","OK")',
          "A margin outside 0–100% means a cost input is wrong."),
-        ("No blank platforms in Fundamentals",       f'=IF(COUNTIFS({FUND}!$B$2:$B${LROWS},"")>1,"CHECK","OK")',
-         "Blank platform cells break the platform split on the Dashboard."),
+        ("No blank platforms in Fundamentals",       f'=IF(SUMPRODUCT(({FUND}!$A$2:$A${LROWS}<>"")*({FUND}!$B$2:$B${LROWS}=""))>0,"CHECK","OK")',
+         "Counts only rows that carry a date -- the empty rows below your data are normal and are ignored."),
         ("Benchmarks retuned for this account",      f'=IF(Benchmarks!$D$16=0,"CHECK","OK")',
          "Until you replace the placeholder thresholds, every Status column is a guess."),
     ]

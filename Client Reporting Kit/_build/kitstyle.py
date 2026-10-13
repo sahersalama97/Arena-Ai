@@ -100,10 +100,17 @@ A_LI = Alignment(horizontal="left",   vertical="center", indent=1)
 
 # ------------------------------------------------------------------- utilities
 def put(ws, ref, value, font=None, fill_=None, fmt=None, align=None, border=None,
-        row_h=None, col_w=None):
-    """Write one cell with optional styling. Returns the cell."""
+        row_h=None, col_w=None, literal=False):
+    """Write one cell with optional styling. Returns the cell.
+
+    literal=True keeps a string that starts with "=" as TEXT. openpyxl would
+    otherwise store it as a real formula (<f>), and Google Sheets evaluates
+    those on import -- so documentation text becomes a #REF!/#ERROR! cell.
+    """
     c = ws[ref]
     c.value = value
+    if literal and isinstance(value, str) and value.lstrip().startswith("="):
+        c.data_type = "s"
     if font:   c.font = font
     if fill_:  c.fill = fill_
     if fmt:    c.number_format = fmt
@@ -114,6 +121,23 @@ def put(ws, ref, value, font=None, fill_=None, fmt=None, align=None, border=None
     if col_w is not None:
         ws.column_dimensions[c.column_letter].width = col_w
     return c
+
+
+def autofit_row(ws, ref, text, font_pt=8.5, pad=6, min_h=20):
+    """Set a row tall enough that the text in `ref` is not clipped.
+
+    Excel column widths are in units of the default 11pt font; Consolas at
+    8.5pt fits roughly 1.3x that many characters per line. Wraps each explicit
+    line to estimate the displayed line count, then converts to points.
+    """
+    import textwrap
+    col = "".join(ch for ch in ref if ch.isalpha())
+    width = ws.column_dimensions[col].width or 9
+    per_line = max(10, int(width * 11.0 / font_pt * 0.95))
+    lines = sum(max(1, len(textwrap.wrap(ln, per_line)) or 1)
+                for ln in str(text).split("\n"))
+    ws.row_dimensions[int("".join(ch for ch in ref if ch.isdigit()))].height = max(
+        min_h, lines * (font_pt * 1.45) + pad)
 
 
 def put_row(ws, row, col_start, values, font=None, fill_=None, fmt=None,

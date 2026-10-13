@@ -122,10 +122,19 @@ def _split_int(total, weights):
     return base
 
 
+def _adset_for(campaign):
+    """Sample ad sets read like real ones -- the campaign's targeting half.
+
+    Real exports name sets like "ADV+SB - ADV+P"; the sample campaigns already
+    carry their targeting, so "Prospecting | Broad | EG" yields "Broad | EG".
+    """
+    return campaign.split("|", 1)[1].strip() if "|" in campaign else campaign
+
+
 def ad_rows(fundamentals):
     """
-    Date, Platform, Ad Name, Campaign, Creative Key, Spend, Impressions, Clicks,
-    Purchases, Revenue
+    Date, Platform, Ad Name, Campaign, Ad Group / Ad Set, Creative Key, Spend,
+    Impressions, Clicks, Purchases, Revenue
 
     Spend is split by the ad's spend weight; purchases by weight x efficiency;
     revenue follows the purchases each ad actually won. Integer splits use largest
@@ -154,7 +163,7 @@ def ad_rows(fundamentals):
             sr = sum(raw)
             for k, (a, wi) in enumerate(zip(ads, w)):
                 rows.append([
-                    d, plat, a[1], a[2], a[3],
+                    d, plat, a[1], a[2], _adset_for(a[2]), a[3],
                     round(spend * wi / sw, 2),
                     round(imp * wi / sw),
                     round(clicks * wi / sw),
@@ -230,11 +239,11 @@ def aggregate_ads(rows=None, by="ad", start=None, end=None, top=None):
     for r in rows:
         if not (start <= r[0] <= end):
             continue
-        key = r[2] if by == "ad" else r[4]
+        key = r[2] if by == "ad" else r[5]
         a = agg.setdefault(key, dict(spend=0, imp=0, clicks=0, pur=0, rev=0,
-                                     camp=r[3], creative=r[4]))
-        a["spend"] += r[5]; a["imp"] += r[6]; a["clicks"] += r[7]
-        a["pur"] += r[8]; a["rev"] += r[9]
+                                     camp=r[3], creative=r[5]))
+        a["spend"] += r[6]; a["imp"] += r[7]; a["clicks"] += r[8]
+        a["pur"] += r[9]; a["rev"] += r[10]
     out = []
     for k, a in agg.items():
         out.append((k, round(a["spend"]), round(a["pur"]), round(a["rev"]),
