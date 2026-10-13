@@ -64,9 +64,25 @@ The n8n system in `Automated Ads Reporting System_files/` writes to predictable 
 | `Combined` | Report → `_Inputs` block 1 | Spend, Purchases, Cost Per Purchase, Purchases Value, ROAS, AOV |
 | `Meta/TikTok Ad Performance`, `… Creatives Performance`, `… Weekly` | Report → `Top Ads`, `Creatives`, `Weekly Trend` | Top 10 by spend, same ranking |
 
-**One-formula link, instead of pasting.** On the Dashboard's **Start Here** tab there's a `VSTACK` / `HSTACK` / `CHOOSECOLS` formula. Put your Raw Data sheet ID in `Fundamentals!N1`, paste that one formula into `Fundamentals!A2`, and the dashboard fills itself from the pipeline — Meta and TikTok both, labels included. Approve the IMPORTRANGE prompt once.
+**One-formula link, instead of pasting.** On the Dashboard's **Start Here** tab there's a `LET` / `VSTACK` / `HSTACK` / `CHOOSECOLS` formula. Put your Raw Data sheet ID in `Fundamentals!N1`, paste that one formula into `Fundamentals!A2`, and the dashboard fills itself from the pipeline — Meta and TikTok both, labels included. Approve the IMPORTRANGE prompt once.
 
-**Known limit, handled honestly.** TikTok doesn't report landing page views, so the kit leaves that blank for TikTok rather than mixing Meta LPVs with TikTok clicks to fake a page-speed metric. The pipeline's own report generator makes the same distinction.
+The column mapping is explicit and verified against the `ONE-OFF Template Prep` headers:
+
+| Kit column | `Daily_Raw_Meta` | `Daily_Raw_TikTok` |
+|---|---|---|
+| Date | 1 | 1 |
+| Spend | 2 | 2 |
+| Impressions | 3 | 3 |
+| Reach | 4 | 4 |
+| Clicks | 7 | 6 |
+| Add to Cart | 9 | 11 |
+| Initiate Checkout | 10 | 12 |
+| Purchases | 11 | 13 |
+| Revenue | 12 | 14 |
+
+**Google Sheets only.** `IMPORTRANGE` doesn't exist in Excel, even Excel 365. In Excel, use Power Query or paste.
+
+**Known limit, handled honestly.** Landing Page Views are left blank by that formula on purpose. Meta reports LPV only at *ad* level (column N of `Daily_Raw_Meta_Ads`), never at account level, and TikTok doesn't report it at all. The kit leaves it blank rather than mixing Meta LPVs with TikTok clicks to fake a page-speed metric. If you want the Meta click-to-landing-page rate, the **Start Here** tab has an optional `ARRAYFORMULA` + `SUMIF` snippet that rolls LPV up from the ad-level tab by date.
 
 **The currency.** Both the pipeline and this kit default to **EGP**. To change it: see *Customising* below.
 

@@ -111,28 +111,99 @@ def sheet_start(wb):
     ws.row_dimensions[r].height = 30
     r += 1
 
-    stack = ("=VSTACK(\n"
-             "  {\"Date\",\"Platform\",\"Spend\",\"Impressions\",\"Reach\",\"Clicks\",\"Landing Page Views\","
-             "\"Add to Cart\",\"Initiate Checkout\",\"Purchases\",\"Revenue\"},\n"
-             "  HSTACK(CHOOSECOLS(IMPORTRANGE($N$1,\"'Daily_Raw_Meta'!A2:P\"),1,2,3,4,7,10,9,11,12),\n"
-             "         IF(CHOOSECOLS(IMPORTRANGE($N$1,\"'Daily_Raw_Meta'!A2:P\"),1)<>\"\",\"Meta\",\"\")),\n"
-             "  HSTACK(CHOOSECOLS(IMPORTRANGE($N$1,\"'Daily_Raw_TikTok'!A2:R\"),1,2,3,4,6,11,12,13,14),\n"
-             "         IF(CHOOSECOLS(IMPORTRANGE($N$1,\"'Daily_Raw_TikTok'!A2:R\"),1)<>\"\",\"TikTok\",\"\"))\n"
-             ")")
+    # ------------------------------------------------------------------
+    # The pipeline link.
+    #
+    # Column mapping, verified against the n8n "ONE-OFF Template Prep" headers:
+    #   Daily_Raw_Meta   (A:P) -> Date 1, Spend 2, Impr 3, Reach 4, Clicks 7,
+    #                             ATC 9, IC 10, Purchases 11, Purchases_Value 12
+    #   Daily_Raw_TikTok (A:R) -> Date 1, Spend 2, Impr 3, Reach 4, Clicks 6,
+    #                             ATC 11, IC 12, Purchases 13, Purchases_Value 14
+    #
+    # Landing Page Views exist only on Daily_Raw_Meta_Ads (column N). They are
+    # never on the Meta account-level tab and never on TikTok at all, so the
+    # slot is emitted blank here and an optional formula below fills it in.
+    #
+    # Every HSTACK emits exactly 11 columns, matching the 11-column header row.
+    # ------------------------------------------------------------------
+    def clean(tab, rng):
+        return ('QUERY(IMPORTRANGE($N$1,"\'Daily_Raw_%s\'!%s"),'
+                '"select * where Col1 is not null",0)' % (tab, rng))
+
+    def hstack(var, plat, picks_a, picks_b):
+        return ("HSTACK("
+                "CHOOSECOLS(%(v)s,1),"                                    # Date
+                'IF(CHOOSECOLS(%(v)s,1)<>"","%(p)s",""),'                 # Platform
+                "CHOOSECOLS(%(v)s,%(a)s),"                                # Spend, Impr, Reach, Clicks
+                'IF(CHOOSECOLS(%(v)s,1)<>"","",""),'                      # Landing Page Views
+                "CHOOSECOLS(%(v)s,%(b)s))"                                # ATC, IC, Purchases, Revenue
+                % dict(v=var, p=plat, a=picks_a, b=picks_b))
+
+    HDR = ('{"Date","Platform","Spend","Impressions","Reach","Clicks",'
+           '"Landing Page Views","Add to Cart","Initiate Checkout","Purchases","Revenue"}')
+
+    stack = ("=LET(\n"
+             "  m, %s,\n"
+             "  t, %s,\n"
+             "  VSTACK(\n"
+             "    %s,\n"
+             "    %s,\n"
+             "    %s\n"
+             "  )\n"
+             ")" % (clean("Meta", "A2:P"), clean("TikTok", "A2:R"),
+                    HDR,
+                    hstack("m", "Meta", "2,3,4,7", "9,10,11,12"),
+                    hstack("t", "TikTok", "2,3,4,6", "11,12,13,14")))
+
     put(ws, f"B{r}", "Formula", f_h2(10), align=A_LI)
     c = put(ws, f"C{r}", stack, Font(name="Consolas", size=8.5, color=INK), F_PANEL, align=A_LW)
     ws.row_dimensions[r].height = 84
     r += 1
     put(ws, f"B{r}", "Note", f_small(9), align=A_LI)
-    put(ws, f"C{r}", "This one uses VSTACK / HSTACK / CHOOSECOLS, which Google Sheets and Excel 365 both support. "
-                     "If your Google Sheets auto-inserts an ARRAYFORMULA wrapper, that's fine — leave it.", f_small(9), align=A_LW)
-    ws.row_dimensions[r].height = 26
+    put(ws, f"C{r}", "Google Sheets only — IMPORTRANGE does not exist in Excel, even Excel 365. In Excel, use "
+                     "Power Query against the sheet instead, or just paste. Use this formula on ONE line: "
+                     "Sheets accepts the line breaks, but if you paste from a PDF or chat window they can turn "
+                     "into characters that break it, so delete any line break that isn't a real newline.",
+        f_small(9), align=A_LW)
+    ws.row_dimensions[r].height = 40
     r += 1
+
     put(ws, f"B{r}", "Column mapping", f_small(9), align=A_LI)
-    put(ws, f"C{r}", "Meta columns taken: Date, Spend, Impressions, Reach, Clicks, Adds_to_Cart, Initiate_Checkout, "
-                     "Purchases, Purchases_Value. TikTok columns taken: Date, Spend, Impressions, Reach, Clicks, "
-                     "Adds_to_Cart, Initiate_Checkout, Purchases, Purchases_Value. Landing Page Views is left blank "
-                     "for TikTok because TikTok does not report it — the kit never fakes that number.", f_small(9), align=A_LW)
+    put(ws, f"C{r}", "Daily_Raw_Meta (A:P) gives Date, Spend, Impressions, Reach, Clicks, Adds_to_Cart, "
+                     "Initiate_Checkout, Purchases, Purchases_Value. Daily_Raw_TikTok (A:R) gives the same, one "
+                     "column apart. The formula maps them explicitly, so if your template ever gains a column, "
+                     "the mapping is the thing to re-check — not the whole dashboard.",
+        f_small(9), align=A_LW)
+    ws.row_dimensions[r].height = 40
+    r += 1
+
+    put(ws, f"B{r}", "About landing page views", f_small(9), align=A_LI)
+    put(ws, f"C{r}", "Landing Page Views are left blank by the formula above, on purpose. Meta only reports LPV at "
+                     "AD level, not account level, and TikTok does not report it at all. If you want the Meta "
+                     "click-to-landing-page rate, put this in Fundamentals!G2 instead of the blank column — it sums "
+                     "Daily_Raw_Meta_Ads by date:",
+        f_small(9), align=A_LW)
+    ws.row_dimensions[r].height = 44
+    r += 1
+
+    lpv = ("=ARRAYFORMULA(IF($A$2:$A=\"\",\"\",\n"
+           "  SUMIF(IMPORTRANGE($N$1,\"'Daily_Raw_Meta_Ads'!A$2:A\"),$A$2:$A,\n"
+           "        IMPORTRANGE($N$1,\"'Daily_Raw_Meta_Ads'!N$2:N\"))))")
+    put(ws, f"B{r}", "LPV formula", f_small(9), align=A_LI)
+    put(ws, f"C{r}", lpv, Font(name="Consolas", size=8.5, color=INK_SOFT), F_PANEL, align=A_LW)
+    ws.row_dimensions[r].height = 44
+    r += 1
+
+    put(ws, f"B{r}", "If the numbers look wrong", f_small(9), align=A_LI)
+    put(ws, f"C{r}", "Two things cause almost every problem. (1) Column A must be a real date, not text — select it "
+                     "and check Format ▸ Number ▸ Date shows something sensible. If it is text, the date filters "
+                     "silently return zero. (2) You must approve the IMPORTRANGE access prompt — the first paste "
+                     "shows a #REF! and a button, and it only works after you click Allow. Run Health Check "
+                     "afterwards: it reports the row count and first/last date, which tells you immediately whether "
+                     "the link worked.",
+        f_small(9), align=A_LW)
+    ws.row_dimensions[r].height = 56
+
     ws.row_dimensions[r].height = 44
     return ws
 
