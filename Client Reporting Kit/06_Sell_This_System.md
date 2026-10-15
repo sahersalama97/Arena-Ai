@@ -263,8 +263,11 @@ Ordered by effort-to-payoff, for a product in this price band:
    $1,500 the buyer expects to be known.
 6. **Egyptian and Gulf communities specifically**, since you're in Cairo and can do Tier 3
    installs in Arabic. That's a real moat for the Gulf market and almost nobody selling
-   English-language kits offers it. **Consider an Arabic version of `05` and the README** —
-   it would differentiate you immediately and it's a day of work.
+   English-language kits offers it. **This is now built:** `README_AR.md` and
+   `05_AI_Prompts_AR.md` — all twelve prompts in Arabic, so the narrative they generate is
+   client-ready Arabic rather than a translation. Say so explicitly in your listing; it is
+   the single clearest differentiator you have in that market, and it costs you nothing
+   because it already exists.
 
 ---
 
@@ -365,3 +368,7 @@ separate work.
 | `08_Proposal_and_Order_Form.md` | For Tier 3 and agency licences. Scope, deliverables, payment, data clause |
 | `09_Delivery_Runbook.md` | What you do after a sale, per tier — including the buyer intake form |
 | `LICENCE.md` | Terms of sale. What a buyer may and may not do with the files |
+| `SETUP_GUIDE.md` | The complete install walkthrough with a check at every step. **Do Part A yourself before selling Tier 2 or 3** |
+| `FAQ.md` | The public support page. Publish it before you launch — it deflects most Tier 1 support |
+| `LAUNCH_COPY.md` | Store listing, welcome email, the community post, two follow-ups, launch checklist. Fill the brackets and ship |
+| `README_AR.md`, `05_AI_Prompts_AR.md` | Arabic README and all twelve prompts. Your clearest differentiator in the Gulf and Egyptian markets |

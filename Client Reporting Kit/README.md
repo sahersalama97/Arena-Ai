@@ -172,6 +172,22 @@ Use it to understand how the kit behaves, then delete it.
 
 ---
 
+## Arabic / العربية
+
+Two files are available in Arabic, for buyers whose clients read Arabic:
+
+| File | What it is |
+|---|---|
+| `README_AR.md` | This README, in Arabic — the setup walkthrough with the same cell addresses |
+| `05_AI_Prompts_AR.md` | All twelve prompts in Arabic, so the narrative they produce is client-ready Arabic rather than a translation |
+
+The input block inside the Arabic prompts keeps its field names in **English on purpose** —
+they match the column headers in the sheets, and the prompts refer to them by name. The
+instructions and the required output are Arabic. Sheet tab names and cell addresses stay in
+Latin script in both versions, because the sheets themselves are English.
+
+---
+
 ## Licence and reuse
 
 **Using it to deliver work: wide open.** Use the kit with as many of your own clients as you
