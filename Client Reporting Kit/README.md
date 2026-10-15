@@ -4,6 +4,18 @@ Everything a freelance media buyer or small agency needs to report on Meta and T
 
 Built to pair with the **Automated Ads Reporting System** already in this repo (the n8n pipeline). It works completely standalone too — the automation saves you the copy-paste, it isn't required.
 
+> ### 👉 Setting the whole thing up? Start with [`START_HERE.md`](START_HERE.md)
+>
+> One guide, ten numbered steps, from an empty Google Drive to dashboards that fill
+> themselves every night. It covers the three template sheets, the five n8n credentials,
+> all ten workflow files in import order, and how to check each step worked. About two
+> hours — or 30 minutes if your data pipeline already runs.
+>
+> The ten workflow JSONs are in [`n8n/workflows/`](n8n/workflows), numbered in the order you
+> import them. Run [`_build/personalise_workflows.py`](_build/personalise_workflows.py)
+> once to replace the ~100 hardcoded IDs, credentials and email addresses with your own —
+> it refuses to run until they're all filled in, and re-checks its own output afterwards.
+
 ---
 
 ## What's in the kit
@@ -16,6 +28,8 @@ Built to pair with the **Automated Ads Reporting System** already in this repo (
 | `04_Monthly_Report_PDF_Template.pdf` | Five-page designed PDF report. Blank, print-ready. | Once a month |
 | `05_AI_Prompts_Campaign_Performance.md` | Twelve prompts for turning numbers into language, each grounded in a specific tab. | Every week and month |
 | `samples/Sample_Monthly_Report.pdf` | A filled-in example of the PDF, so you can see the finished thing. | First, to see what you're aiming at |
+| `START_HERE.md` | The A-to-Z setup guide for the whole system, workflows included. | **Before anything else** |
+| `n8n/workflows/` | All ten workflow JSONs, numbered in import order. | During setup |
 
 ---
 
