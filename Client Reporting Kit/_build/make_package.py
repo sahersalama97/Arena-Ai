@@ -18,6 +18,10 @@ folder, minus everything that must not leave this machine:
   _build/build_gofresh_report.py names that client and reads sandbox-only
                                  paths (/tmp, google_drive/) that do not
                                  exist for anyone else
+  n8n/WF4 ...json                byte-identical duplicates of the numbered
+  n8n/WF5 ...json                copies in n8n/workflows/. One workflow, one
+  n8n/WF2e_PATCH_...json         file, one obvious name. See DUPLICATE_PAIRS -
+                                 each pair is checksummed before exclusion.
 
 Nothing is deleted from the repository - the exclusions only affect the ZIP.
 
@@ -50,6 +54,22 @@ EXCLUDE_FILES = {
     os.path.join("_build", "build_gofresh_report.py"),
 }
 EXCLUDE_EXT = {".pyc", ".pyo", ".DS_Store"}
+
+# Same workflow under two names. The numbered copy in n8n/workflows/ is the one
+# the guide tells you to import, so the loose original is left out of the
+# package - a buyer should not have to guess which of two identical files to
+# use. Each pair is checksummed at build time: if they ever diverge the build
+# fails, because excluding the loose copy would then mean dropping a workflow
+# that is no longer a duplicate.
+DUPLICATE_PAIRS = [
+    (os.path.join("n8n", "WF4 Provision Client Reporting Kit.json"),
+     os.path.join("n8n", "workflows", "07_WF4_Provision_Client_Reporting_Kit.json")),
+    (os.path.join("n8n", "WF5 Client Reporting Kit Nightly Refresh.json"),
+     os.path.join("n8n", "workflows", "08_WF5_Kit_Nightly_Refresh.json")),
+    (os.path.join("n8n", "WF2e_PATCH_TikTok_Ads_Upsert.json"),
+     os.path.join("n8n", "workflows", "05b_PATCH_for_WF2e_TikTok_Ads.json")),
+]
+EXCLUDE_FILES |= {loose for loose, _ in DUPLICATE_PAIRS}
 
 
 def keep(rel):
@@ -96,7 +116,10 @@ minutes.
     samples/Sample_Monthly_Report.pdf   a filled example of 04
 
     n8n/workflows/                all 10 workflow JSONs, numbered in the
-                                  order you import them (00 ... 08)
+                                  order you import them (00 ... 08).
+                                  This is the only place workflows live -
+                                  there is exactly one copy of each, so you
+                                  never have to guess which file to import
     n8n/code_*.js                 the three Code nodes, standalone for testing
     n8n/AUTOMATION_GUIDE.md       WF4 and WF5 in detail
     n8n/WF2e_FIX_...md            READ FIRST if your TikTok raw sheet has
@@ -140,10 +163,15 @@ Step 9 turns it off.
 
 ## Verifying your download
 
-`MANIFEST.md` lists every file in this package with its size and SHA-256. To
-check the archive is intact:
+`MANIFEST.md` lists every file in this package with its size and SHA-256.
+Unzip, then run this from inside the folder it creates - the paths in the
+manifest are relative to the package root, which is where you will be standing:
 
+    cd Media-Buyers-Client-Reporting-Kit
     sha256sum -c MANIFEST.sha256
+
+Every line should say `OK`. The two manifest files are not listed in
+themselves, because a file cannot contain its own hash.
 
 ## Not in this package
 
@@ -216,6 +244,21 @@ def main():
     if not os.path.isdir(upstream):
         sys.exit("cannot find the upstream pipeline at " + upstream)
 
+    # A loose workflow is only safe to leave out while it is still a duplicate.
+    for loose, numbered in DUPLICATE_PAIRS:
+        a, b = os.path.join(KIT, loose), os.path.join(KIT, numbered)
+        for p in (a, b):
+            if not os.path.isfile(p):
+                sys.exit(f"expected {os.path.relpath(p, REPO)} but it is missing - "
+                         "update DUPLICATE_PAIRS in make_package.py")
+        ha = hashlib.sha256(open(a, "rb").read()).hexdigest()
+        hb = hashlib.sha256(open(b, "rb").read()).hexdigest()
+        if ha != hb:
+            sys.exit(f"refusing to build: {os.path.basename(loose)} no longer matches "
+                     f"{os.path.basename(numbered)}, so excluding it would drop a "
+                     f"workflow. Reconcile the two files, or remove the pair from "
+                     f"DUPLICATE_PAIRS.")
+
     stage = tempfile.mkdtemp(prefix="pkg_")
     root = os.path.join(stage, PKG_NAME)
     os.makedirs(root)
@@ -268,9 +311,12 @@ def main():
     with open(os.path.join(root, "MANIFEST.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(man) + "\n")
 
+    # Paths are relative to the package root, not to its parent: the manifest
+    # sits inside the extracted folder, and that is where anyone following the
+    # cover note will be standing when they run sha256sum -c.
     with open(os.path.join(root, "MANIFEST.sha256"), "w", encoding="utf-8") as fh:
         for rel, size, digest in rows:
-            fh.write(f"{digest}  {PKG_NAME}/{rel}\n")
+            fh.write(f"{digest}  {rel.replace(os.sep, '/')}\n")
 
     # --- zip -----------------------------------------------------------
     if os.path.exists(OUT_ZIP):
@@ -289,10 +335,12 @@ def main():
         if bad:
             problems.append("corrupt member: " + bad)
         names = z.namelist()
-        for forbidden in ("google_drive/", "__pycache__/", "workflows_READY/",
-                          "build_gofresh_live.py", "build_gofresh_report.py"):
-            if any(forbidden in n for n in names):
-                problems.append("excluded path leaked into the ZIP: " + forbidden)
+        forbidden = ["google_drive/", "__pycache__/", "workflows_READY/",
+                     "build_gofresh_live.py", "build_gofresh_report.py"]
+        forbidden += [os.path.basename(loose) for loose, _ in DUPLICATE_PAIRS]
+        for bad_path in forbidden:
+            if any(bad_path in n for n in names):
+                problems.append("excluded path leaked into the ZIP: " + bad_path)
         wf = [n for n in names if "/n8n/workflows/" in n and n.endswith(".json")]
         if len(wf) != 10:
             problems.append(f"expected 10 workflow JSONs, found {len(wf)}")
