@@ -15,6 +15,7 @@ SRC_KIT = "/home/user/Arena-Ai/Client Reporting Kit/01_Google_Sheets_Reporting_D
 OUT = "/home/user/Arena-Ai/google_drive/GOFRESH - Reporting Dashboard (LIVE).xlsx"
 
 CUR = "EGP"
+BRAND_NAME = "GOFRESH"
 # ---- THE ONLY INVENTED NUMBERS. Labelled as assumptions in the file. ----
 ASSUMED_COGS_PCT = 0.30
 ASSUMED_OTHER_VAR_PCT = 0.04
@@ -99,45 +100,83 @@ fund.sort(key=lambda x: (x[0], x[1]))
 # Kit columns: Date, Platform, Ad Name, Campaign, Ad Group / Ad Set,
 #              Creative Key, Spend, Impressions, Clicks, Purchases, Revenue
 ads = []
-# Meta: 1 Date, 3 Ad_Name, 4 AdSet_Name, 5 Campaign_Name, 6 Creative_Key,
-#       7 Spend, 8 Impressions, 12 Clicks, 17 Purchases, 18 Purchases_Value
-for r in range(2, meta_ads.max_row + 1):
-    d = as_date(meta_ads.cell(r, 1).value)
-    if not d:
-        continue
-    ads.append([d, "Meta",
-                meta_ads.cell(r, 3).value, meta_ads.cell(r, 5).value, meta_ads.cell(r, 4).value,
-                meta_ads.cell(r, 6).value,
-                num(meta_ads.cell(r, 7).value), num(meta_ads.cell(r, 8).value),
-                num(meta_ads.cell(r, 12).value), num(meta_ads.cell(r, 17).value),
-                num(meta_ads.cell(r, 18).value)])
+# De-duplicate on (Date, Ad_ID), keeping the most recently PULLED copy. The Meta
+# ad-level sync upserts on that key upstream; the TikTok CSV import appends
+# instead, so one ad-day arrives once per sync run and quietly doubles its spend
+# and revenue. The two copies are NOT identical -- TikTok restates reach and
+# conversions as attribution matures -- and in the raw sheet the newer row is
+# usually FIRST, so "last row wins" would keep the stale numbers.
+DUPLICATE_AD_ROWS_REMOVED = 0
 
-# TikTok: 1 Date, 3 Ad_Name, 4 Campaign_Name, 5 AdGroup_Name, 6 Creative_Key,
-#         7 Spend, 8 Impressions, 11 Clicks, 17 Purchases, 18 Purchases_Value
-for r in range(2, tt_ads.max_row + 1):
-    d = as_date(tt_ads.cell(r, 1).value)
-    if not d:
-        continue
-    ads.append([d, "TikTok",
-                tt_ads.cell(r, 3).value, tt_ads.cell(r, 4).value, tt_ads.cell(r, 5).value,
-                tt_ads.cell(r, 6).value,
-                num(tt_ads.cell(r, 7).value), num(tt_ads.cell(r, 8).value),
-                num(tt_ads.cell(r, 11).value), num(tt_ads.cell(r, 17).value),
-                num(tt_ads.cell(r, 18).value)])
+
+def collect_ad_rows(ws, platform, clicks_col, pulled_col):
+    """One row per (date, Ad_ID), newest pull winning."""
+    global DUPLICATE_AD_ROWS_REMOVED
+    best, rank = {}, {}
+    for r in range(2, ws.max_row + 1):
+        d = as_date(ws.cell(r, 1).value)
+        name = ws.cell(r, 3).value
+        if not d or not name:
+            continue
+        ad_id = str(ws.cell(r, 2).value or "").strip()
+        key = (d, ad_id or str(name))
+        pulled = str(ws.cell(r, pulled_col).value or "")
+        row = [d, platform,
+               name, ws.cell(r, 5).value if platform == "Meta" else ws.cell(r, 4).value,
+               ws.cell(r, 4).value if platform == "Meta" else ws.cell(r, 5).value,
+               ws.cell(r, 6).value,
+               num(ws.cell(r, 7).value), num(ws.cell(r, 8).value),
+               num(ws.cell(r, clicks_col).value), num(ws.cell(r, 17).value),
+               num(ws.cell(r, 18).value)]
+        if key in best:
+            DUPLICATE_AD_ROWS_REMOVED += 1
+            if pulled < rank[key]:
+                continue                      # older pull: ignore it
+        best[key], rank[key] = row, pulled
+    return list(best.values())
+
+
+# Meta: 1 Date, 2 Ad_ID, 3 Ad_Name, 4 AdSet_Name, 5 Campaign_Name, 6 Creative_Key,
+#       7 Spend, 8 Impressions, 12 Clicks, 17 Purchases, 18 Purchases_Value, 22 Pulled_At
+ads += collect_ad_rows(meta_ads, "Meta", 12, 22)
+# TikTok: 1 Date, 2 Ad_ID, 3 Ad_Name, 4 Campaign_Name, 5 AdGroup_Name,
+#         6 Creative_Key, 7 Spend, 8 Impressions, 11 Clicks, 17 Purchases,
+#         18 Purchases_Value, 22 Pulled_At
+ads += collect_ad_rows(tt_ads, "TikTok", 11, 22)
 
 ads.sort(key=lambda x: (x[0], x[1]))
 
 # ============================================================== period choice
-# The pipeline's first day is 2026-10-01 and it ran at 03:09 on the 13th, so
-# 10-12 and 10-13 are still filling in. Use 10-01..10-12, split into two equal
-# six-day halves so the comparison is like-for-like.
-all_dates = sorted({f[0] for f in fund})
-first = all_dates[0]
-usable_last = dt.date(2026, 10, 12)
-USABLE = [d for d in all_dates if d <= usable_last]
-half = len(USABLE) // 2
-CMP_START, CMP_END = USABLE[0], USABLE[half - 1]
-CUR_START, CUR_END = USABLE[half], USABLE[-1]
+# Adaptive. The pipeline re-pulls a rolling window every night, so the newest
+# row can be a partial day. We drop a trailing day only when it is obviously
+# incomplete (impressions recorded but reach zero), then report the last
+# WINDOW_DAYS complete days against the WINDOW_DAYS before them.
+WINDOW_DAYS = 7
+
+by_date = {}
+for row in fund:
+    d, plat = row[0], row[1]
+    e = by_date.setdefault(d, {})
+    e[plat] = row
+
+def looks_partial(d):
+    """A day where a platform posted impressions but no reach is mid-sync."""
+    for plat, row in by_date[d].items():
+        if row[3] > 0 and row[4] == 0:      # impressions > 0, reach == 0
+            return True
+    return False
+
+all_dates = sorted(by_date)
+dropped = []
+while all_dates and looks_partial(all_dates[-1]):
+    dropped.append(all_dates.pop())
+
+if len(all_dates) < WINDOW_DAYS * 2:
+    raise SystemExit(f"need {WINDOW_DAYS*2} complete days, have {len(all_dates)}")
+
+CUR_START, CUR_END = all_dates[-WINDOW_DAYS], all_dates[-1]
+CMP_START, CMP_END = all_dates[-WINDOW_DAYS * 2], all_dates[-WINDOW_DAYS - 1]
+USABLE = all_dates
 
 tot = lambda rows, s, e, p=None: sum(x[2] for x in rows if s <= x[0] <= e and (not p or x[1] == p))
 rev = lambda rows, s, e: sum(x[10] for x in rows if s <= x[0] <= e)
@@ -145,7 +184,7 @@ sp = tot(fund, CUR_START, CUR_END)
 rv = rev(fund, CUR_START, CUR_END)
 
 print(f"GOFRESH data: {all_dates[0]} to {all_dates[-1]}  ({len(fund)} account rows, {len(ads)} ad rows)")
-print(f"Oct 13 partial (pipeline ran 03:09) -- excluded; usable to {usable_last}")
+print(f"Partial trailing day(s) dropped: {dropped if dropped else 'none'}")
 print(f"Current period  {CUR_START} to {CUR_END}: spend {sp:,.0f}  revenue {rv:,.0f}  ROAS {rv/sp:.2f}x")
 print(f"Compare period  {CMP_START} to {CMP_END}: spend {tot(fund,CMP_START,CMP_END):,.0f}  "
       f"revenue {rev(fund,CMP_START,CMP_END):,.0f}")
@@ -192,10 +231,20 @@ ws["M1"] = "Source: GOFRESH - Raw Data (ad-level tabs)"
 
 # --- KPI Calc: periods + labelled business assumptions
 ws = wb["KPI Calc"]
-ws["B4"], ws["C4"] = CUR_START, CUR_END
-ws["B5"], ws["C5"] = CMP_START, CMP_END
-for ref, fmt in (("B4", "yyyy-mm-dd"), ("C4", "yyyy-mm-dd"), ("B5", "yyyy-mm-dd"), ("C5", "yyyy-mm-dd")):
-    ws[ref].number_format = fmt
+# Periods live on _Control now (KPI Calc B4:C5 read from there), so that both a
+# human and the n8n refresh workflow change the period in exactly one place.
+ws = wb["_Control"]
+ws["B2"], ws["B3"] = CUR_START, CUR_END
+ws["B4"], ws["B5"] = CMP_START, CMP_END
+for ref in ("B2", "B3", "B4", "B5"):
+    ws[ref].number_format = "yyyy-mm-dd"
+# These three are what the n8n refresh workflow stamps on every run. Writing
+# them here means this file looks exactly like one the automation produced.
+ws["B6"] = BRAND_NAME
+ws["B7"] = dt.datetime.now().replace(microsecond=0)
+ws["B7"].number_format = "yyyy-mm-dd hh:mm"
+ws["B8"] = len(ads)
+ws = wb["KPI Calc"]
 ws["J5"] = ASSUMED_COGS_PCT
 ws["J6"] = ASSUMED_OTHER_VAR_PCT
 ws["J7"] = ASSUMED_SHIP_PER_ORDER
@@ -220,39 +269,35 @@ for a in in_period:
 # they show up with zeroes in the table.
 top = sorted(by_ad.items(), key=lambda kv: -kv[1]["spend"])[:10]
 
-ws = wb["Ad Performance"]
-for r in range(6, ws.max_row + 1):
-    for c in range(1, 15):
-        ws.cell(r, c).value = None
-for i, ((plat, name), info) in enumerate(top):
-    r = 6 + i
-    ws.cell(r, 1).value = name
-    ws.cell(r, 2).value = plat
-    ws.cell(r, 3).value = info["camp"]
-    ws.cell(r, 4).value = info["ck"]
-    ws.cell(r, 5).value = f"={('SUMIFS' if True else '')}('Ad Data'!$G$2:$G$6000,'Ad Data'!$C$2:$C$6000,$A{r},'Ad Data'!$A$2:$A$6000,\">=\"&'KPI Calc'!$B$4,'Ad Data'!$A$2:$A$6000,\"<=\"&'KPI Calc'!$C$4)"
-    ws.cell(r, 6).value = f"=SUMIFS('Ad Data'!$H$2:$H$6000,'Ad Data'!$C$2:$C$6000,$A{r},'Ad Data'!$A$2:$A$6000,\">=\"&'KPI Calc'!$B$4,'Ad Data'!$A$2:$A$6000,\"<=\"&'KPI Calc'!$C$4)"
-    ws.cell(r, 7).value = f"=SUMIFS('Ad Data'!$I$2:$I$6000,'Ad Data'!$C$2:$C$6000,$A{r},'Ad Data'!$A$2:$A$6000,\">=\"&'KPI Calc'!$B$4,'Ad Data'!$A$2:$A$6000,\"<=\"&'KPI Calc'!$C$4)"
-    ws.cell(r, 8).value = f"=IFERROR(G{r}/F{r},0)"
-    ws.cell(r, 9).value = f"=SUMIFS('Ad Data'!$J$2:$J$6000,'Ad Data'!$C$2:$C$6000,$A{r},'Ad Data'!$A$2:$A$6000,\">=\"&'KPI Calc'!$B$4,'Ad Data'!$A$2:$A$6000,\"<=\"&'KPI Calc'!$C$4)"
-    ws.cell(r, 10).value = f"=SUMIFS('Ad Data'!$K$2:$K$6000,'Ad Data'!$C$2:$C$6000,$A{r},'Ad Data'!$A$2:$A$6000,\">=\"&'KPI Calc'!$B$4,'Ad Data'!$A$2:$A$6000,\"<=\"&'KPI Calc'!$C$4)"
-    ws.cell(r, 11).value = f"=IFERROR(J{r}/E{r},0)"
-    ws.cell(r, 12).value = f"=IFERROR(E{r}/I{r},0)"
-    ws.cell(r, 13).value = f"=IFERROR(J{r}/I{r},0)"
-    ws.cell(r, 14).value = (f'=IF(E{r}=0,"No spend in period",'
-                            f'IF(K{r}>=MAX(\'KPI Calc\'!$B$35*1.3,0.01),"Scale — put more budget here",'
-                            f'IF(K{r}>=\'KPI Calc\'!$B$35,"Working — maintain and refresh creative",'
-                            f'"Below breakeven — fix the page or cut it")))')
+# Ad Performance is NOT written here any more. Column A of that tab is a live
+# QUERY over Ad Data that ranks ad names by spend inside the selected period, so
+# it re-ranks itself whenever _Control changes. Writing a static list here was
+# the original bug: it froze one period's winners into a table that then summed
+# a different period against them. `top` below is kept only so the build can
+# print what the query is expected to return, and be checked against it.
 
 # --- Dashboard: honest warning about attribution maturity
 ws = wb["Dashboard"]
+# Find the days where revenue was booked with (almost) no spend. Those are sales
+# from an earlier click still landing -- the reason a fresh period always reads
+# low against a mature one. Derived from the data so the sentence stays true as
+# the pipeline keeps running, instead of naming fixed dates that go stale.
+LAG_DAYS = [r for r in fund
+            if r[2] < 1 and r[10] > 0 and CMP_START <= r[0] <= CUR_END]
+lag_note = ""
+if LAG_DAYS:
+    days = sorted({r[0] for r in LAG_DAYS})
+    shown = ", ".join(d.strftime("%b %-d") if hasattr(d, "strftime") else str(d) for d in days[:4])
+    if hasattr(days[0], "strftime"):
+        shown = ", ".join(f"{d.month}/{d.day}" for d in days[:4])
+    lag_note = (f" On {shown} GOFRESH booked revenue against effectively zero spend -- those were "
+                f"sales from earlier clicks still landing.")
 warn = (
     "READ THIS BEFORE ACTING ON THE COMPARISON. The current period is more recent than the comparison "
-    "period, and Meta and TikTok keep attributing purchases for days after a click. On Oct 1 and Oct 2 "
-    "GOFRESH recorded revenue with zero spend -- those were sales from September still landing. The same "
-    "effect is working in reverse on the current period: its purchases are still arriving, so its ROAS and "
-    "conversion rate are understated. Your pipeline already handles this by re-pulling a rolling 7-day "
-    "window every night; the numbers will settle over the next week. Do not cut budget on this comparison yet."
+    "period, and Meta and TikTok keep attributing purchases for days after a click." + lag_note +
+    " The same effect is working in reverse on the current period: its purchases are still arriving, so "
+    "its ROAS and conversion rate are understated. Your pipeline re-pulls a rolling window every night, "
+    "so these numbers will settle over the next week. Do not cut budget on this comparison yet."
 )
 ws["A36"] = warn
 ws.merge_cells("A36:H39")
@@ -260,8 +305,26 @@ ws["A36"].alignment = __import__("openpyxl").styles.Alignment(horizontal="left",
 ws["A36"].font = Font(name="Inter", size=10, bold=True, color="B91C1C")
 ws["A36"].fill = __import__("openpyxl").styles.PatternFill("solid", fgColor="FEE2E2")
 for row in range(36, 40):
+    # The warning is ~700 characters across 8 columns: about five rendered lines.
+    # Four default 15pt rows is 60pt and clips it mid-sentence, which reads as a
+    # broken sheet. Give it room.
+    ws.row_dimensions[row].height = 24
     for col in range(1, 9):
         ws.cell(row=row, column=col).fill = __import__("openpyxl").styles.PatternFill("solid", fgColor="FEE2E2")
+
+# The same warning belongs on both platform dashboards -- they carry the same
+# period-over-period comparison, so they carry the same attribution caveat.
+from openpyxl.styles import Alignment, PatternFill
+for tab in ("Meta Dashboard", "TikTok Dashboard"):
+    ws = wb[tab]
+    ws["A47"] = warn
+    ws.merge_cells("A47:H50")
+    ws["A47"].alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
+    ws["A47"].font = Font(name="Inter", size=10, bold=True, color="B91C1C")
+    for row in range(47, 51):
+        ws.row_dimensions[row].height = 24      # same clipping trap as A36
+        for col in range(1, 9):
+            ws.cell(row=row, column=col).fill = PatternFill("solid", fgColor="FEE2E2")
 
 # --- Start Here: stamp what this file actually is
 ws = wb["Start Here"]
@@ -275,6 +338,8 @@ wb.active = 0
 wb.save(OUT)
 print("\nwrote", OUT)
 print(f"  Fundamentals rows: {len(fund)}")
-print(f"  Ad Data rows:      {len(ads)}")
-print(f"  Top ads written:   {len(top)} (ranked on {CUR_START}..{CUR_END})")
+print(f"  Ad Data rows:      {len(ads)}   (duplicate ad-days dropped: {DUPLICATE_AD_ROWS_REMOVED}, newest pull kept)")
+print(f"  Ad Performance:    live QUERY will rank {len(by_ad)} ad names "
+      f"in-period; top spender is {top[0][0][1]!r} at {top[0][1]['spend']:,.0f} EGP")
+print(f"  _Control stamped:  {BRAND_NAME}, {len(ads)} rows, period {CUR_START}..{CUR_END}")
 print(f"  Meta LPV filled:   {filled} of {len([f for f in fund if f[1]=='Meta'])} Meta days")

@@ -64,9 +64,12 @@ The n8n system in `Automated Ads Reporting System_files/` writes to predictable 
 | `Combined` | Report → `_Inputs` block 1 | Spend, Purchases, Cost Per Purchase, Purchases Value, ROAS, AOV |
 | `Meta/TikTok Ad Performance`, `… Creatives Performance`, `… Weekly` | Report → `Top Ads`, `Creatives`, `Weekly Trend` | Top 10 by spend, same ranking |
 
-**One-formula link, instead of pasting.** On the Dashboard's **Start Here** tab there's a `LET` / `VSTACK` / `HSTACK` / `CHOOSECOLS` formula. Put your Raw Data sheet ID in `Fundamentals!N1`, paste that one formula into `Fundamentals!A2`, and the dashboard fills itself from the pipeline — Meta and TikTok both, labels included. Approve the IMPORTRANGE prompt once.
+**Fully automated — two n8n workflows.** If you run the pipeline, you don't paste anything and you don't maintain a link formula either. See **[`n8n/AUTOMATION_GUIDE.md`](n8n/AUTOMATION_GUIDE.md)**. WF4 copies a dashboard per client; WF5 reads the four raw tabs and fills it every night at 14:00, choosing the reporting window from the data. Three Sheets API calls per brand.
 
-The column mapping is explicit and verified against the `ONE-OFF Template Prep` headers:
+**Manual alternative — one formula.** On the Dashboard's **Start Here** tab there's a `LET` / `VSTACK` / `HSTACK` / `CHOOSECOLS` formula. Put your Raw Data sheet ID in `Fundamentals!N1`, paste that one formula into `Fundamentals!A2`, and the dashboard fills itself from the pipeline — Meta and TikTok both, labels included. Approve the IMPORTRANGE prompt once.
+
+The column mapping is explicit and verified against the `ONE-OFF Template Prep` headers. The automated path matches these **by header name** rather than by position, so it survives a raw template gaining a column; the manual formula uses the positions below:
+
 
 | Kit column | `Daily_Raw_Meta` | `Daily_Raw_TikTok` |
 |---|---|---|
@@ -82,7 +85,12 @@ The column mapping is explicit and verified against the `ONE-OFF Template Prep` 
 
 **Google Sheets only.** `IMPORTRANGE` doesn't exist in Excel, even Excel 365. In Excel, use Power Query or paste.
 
-**Known limit, handled honestly.** Landing Page Views are left blank by that formula on purpose. Meta reports LPV only at *ad* level (column N of `Daily_Raw_Meta_Ads`), never at account level, and TikTok doesn't report it at all. The kit leaves it blank rather than mixing Meta LPVs with TikTok clicks to fake a page-speed metric. If you want the Meta click-to-landing-page rate, the **Start Here** tab has an optional `ARRAYFORMULA` + `SUMIF` snippet that rolls LPV up from the ad-level tab by date.
+**Known limit, handled honestly.** The *manual* link formula leaves Landing Page Views blank, on purpose. Meta reports LPV only at *ad* level (column N of `Daily_Raw_Meta_Ads`), never at account level, and TikTok doesn't report it at all. The kit leaves it blank rather than mixing Meta LPVs with TikTok clicks to fake a page-speed metric. Two ways to get the real number:
+
+- **Automated installs:** WF5 already sums `Daily_Raw_Meta_Ads!LPV` up by date into the Meta rows, so nothing to do.
+- **Manual installs:** the **Start Here** tab has an `ARRAYFORMULA` + `SUMIF` snippet for `Fundamentals!G2`. Note it wraps the criteria in `TEXT(...,"yyyy-mm-dd")` — `Daily_Raw_Meta_Ads` stores dates as *text*, and `SUMIF` will not match a real date against text, so without the wrapper it silently returns 0 and the click-to-landing-page rate reads 0.0%.
+
+TikTok rows stay blank either way; the TikTok Dashboard says so in words instead of showing a zero.
 
 **The currency.** Both the pipeline and this kit default to **EGP**. To change it: see *Customising* below.
 
@@ -90,18 +98,25 @@ The column mapping is explicit and verified against the `ONE-OFF Template Prep` 
 
 ## The tabs, briefly
 
-### Dashboard (`01_…`)
+### Dashboard (`01_…`) — 11 tabs
 **Start Here** — how to use it, plus the pipeline link.
 **Fundamentals / Ad Data** — your data goes here. Column order is the contract.
-**KPI Calc** — every metric, current vs comparison, with a status column that reads from Benchmarks. Also the four cells you set each period.
-**Dashboard** — the client-facing view: KPI tiles, platform split, funnel with targets, and five auto-written commentary lines you can paste into an email.
-**Ad Performance** — one row per ad, ranked by spend, with a verdict that reads against breakeven.
+**KPI Calc** — every metric, current vs comparison, with a status column that reads from Benchmarks. Its four period cells read from `_Control`, so there is only ever one place to change the dates.
+**`_Control`** — the automation's write target, and the only tab it writes. Four period dates plus `Brand_Name`, `Last_Refresh` and `Rows_Synced`, so a stale dashboard is obvious at a glance.
+**Dashboard** — the blended, client-facing view: KPI tiles, platform split, funnel with targets, and auto-written commentary lines you can paste into an email.
+**Meta Dashboard** — Meta only. Every figure on the tab is filtered to Meta, and it is graded against Benchmarks on its own.
+**TikTok Dashboard** — TikTok only. Same shape, its own numbers. States plainly that TikTok reports no landing page views rather than showing 0%.
+**Ad Performance** — one row per ad, ranked by spend *inside the selected period*, with a verdict that reads against breakeven. Column A is a live query, so it re-ranks itself whenever the period changes.
 **Benchmarks** — the thresholds that decide every status. Placeholders ship so it works on day one; replace them with your own trailing 90 days.
 **Health Check** — proves ad-level data reconciles to account-level data, and flags impossible numbers. Run it before every client conversation.
 
-### Client Report (`02_…`)
+**Why three dashboards instead of one.** Blended numbers let a weak channel hide behind a strong one. On GOFRESH, 8–14 Oct against 1–7 Oct, the blended read is "ROAS fell 21%". Split apart it is two unrelated problems: TikTok's frequency hit 4.10 with click-to-purchase at 1.65%, while Meta sat at 1.46 frequency and 5.23% click-to-purchase. One says *refresh creative and cap frequency*; the other says *leave it alone*. A single blended dashboard cannot tell you that.
+
+### Client Report (`02_…`) — 11 tabs
 **`_Inputs`** — internal. All numbers live here; every other tab reads from it.
-**Cover / Executive Summary / Performance / Platform Detail / Top Ads / Creatives / Weekly Trend / What We Did & Next / Dictionary** — the client-facing pages.
+**Cover / Executive Summary / Performance / Platform Detail / Combined / Top Ads / Creatives / Weekly Trend / What We Did & Next / Dictionary** — the client-facing pages.
+**Combined** — the one tab where Meta and TikTok deliberately share a row: side-by-side metrics with each platform's share of spend and revenue, a combined funnel, and a "which platform is earning its keep" block that compares share of spend against share of revenue.
+
 
 ### KPI Calculator (`03_…`)
 **Calculator** — 9 media inputs + 9 business inputs → funnel rates, unit economics, breakeven ROAS, POAS, five sentences of verdict, seven sanity checks.

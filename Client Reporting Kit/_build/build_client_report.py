@@ -455,9 +455,9 @@ def sheet_platform(wb):
         ("Reach",             "$B$42", "$C$42", F_INT),
         ("Frequency",         "$B$43", "$C$43", F_2D),
         ("Adds to cart",      "$B$44", "$C$44", F_INT),
-        ("Initiate Checkout", "$B$45", "$C$46", F_INT),
+        ("Initiate Checkout", "$B$45", "$C$45", F_INT),
         ("Purchases",         "$B$46", "$C$46", F_INT),
-        ("Cost Per Purchase", "$B$47", "$C$48", M),
+        ("Cost Per Purchase", "$B$47", "$C$47", M),
         ("Purchases Value",   "$B$48", "$C$48", M),
         ("ROAS",              "$B$49", "$C$49", F_RATIO4),
         ("AOV",               "$B$50", "$C$50", M),
@@ -698,6 +698,135 @@ def sheet_dict(wb):
     return ws
 
 
+# ================================================================ COMBINED
+def sheet_combined(wb):
+    """The one place the two platforms share a row.
+
+    Meta and TikTok each get their own dashboard so a weak platform cannot hide
+    behind a strong one. This tab is where they are deliberately put side by
+    side, and it is what the client sees when the question is "how did we do".
+    """
+    ws = wb.create_sheet("Combined")
+    gridlines_off(ws)
+    std_widths(ws, {"A": 26, "B": 16, "C": 16, "D": 17, "E": 13, "F": 13})
+    ws.column_dimensions["G"].width = 34
+
+    put(ws, "A1", "Combined — Meta + TikTok", f_title(17))
+    put(ws, "A2", f'={IN}!$B$5&"   ·   "&{IN}!$B$6&" against "&{IN}!$B$7', f_italic(9.5))
+    ws.merge_cells("A3:G3")
+    put(ws, "A3", "This is the only tab where the two platforms share a row — everything else keeps them apart "
+                  "on purpose, so a weak channel cannot hide behind a strong one.", f_tiny(8), align=A_LI)
+
+    # ---- side by side
+    section_bar(ws, 5, 1, 7, "  THE TWO PLATFORMS TOGETHER")
+    for i, h in enumerate(["Metric", "Meta", "TikTok", "Combined", "Meta share", "TikTok share"]):
+        put(ws, f"{L(1+i)}6", h, f_h2(9), F_HEAD, align=A_LI if i == 0 else A_C)
+
+    # row: (label, meta ref, tiktok ref, combined formula, fmt, share?)
+    rows = [
+        ("Spend",              "$B$22", "$B$38", f"={IN}!$D$13", M,     True),
+        ("Impressions",        "$B$24", "$B$41", None,           F_INT, True),
+        ("Clicks",             None,    None,    None,           F_INT, True),
+        ("Adds to cart",       "$B$27", "$B$44", None,           F_INT, False),
+        ("Initiate Checkout",  "$B$28", "$B$45", None,           F_INT, False),
+        ("Purchases",          "$B$29", "$B$46", f"={IN}!$D$14", F_INT, False),
+        ("Purchases Value",    "$B$31", "$B$48", f"={IN}!$D$16", M,     True),
+        ("Reach (sum of days)", "$B$25", "$B$42", None,          F_INT, False),
+        ("CPM",                None,    "$B$39", f"=IFERROR(D7/D8*1000,0)",        M,     False),
+        ("CTR",                "$B$23", "$B$40", f"=IFERROR(D9/D8,0)",                F_PCT, False),
+        ("Frequency",          "$B$26", "$B$43", f"=IFERROR(D8/D14,0)",               F_2D,  False),
+        ("Cost Per Purchase",  "$B$30", "$B$47", f"={IN}!$D$15", M,     False),
+        ("ROAS",               "$B$32", "$B$49", f"={IN}!$D$17", F_RATIO4, False),
+        ("AOV",                "$B$33", "$B$50", f"={IN}!$D$18", M,     False),
+    ]
+    first = 7
+    for i, (lab, mref, tref, comb, fmt, share) in enumerate(rows):
+        r = first + i
+        put(ws, f"A{r}", lab, f_body(9.5), align=A_LI)
+        # clicks and CPM are not in the automation's payload; derive them
+        if lab == "Clicks":
+            put(ws, f"B{r}", f"={IN}!$B$23*{IN}!$B$24", f_calc(9.5), fmt=fmt, align=A_C)
+            put(ws, f"C{r}", f"={IN}!$B$40*{IN}!$B$41", f_calc(9.5), fmt=fmt, align=A_C)
+        elif lab == "CPM":
+            put(ws, f"B{r}", f"=IFERROR({IN}!$B$22/{IN}!$B$24*1000,0)", f_calc(9.5), fmt=fmt, align=A_C)
+            put(ws, f"C{r}", f"={IN}!{tref}", f_calc(9.5), fmt=fmt, align=A_C)
+        else:
+            put(ws, f"B{r}", f"={IN}!{mref}", f_calc(9.5), fmt=fmt, align=A_C)
+            put(ws, f"C{r}", f"={IN}!{tref}", f_calc(9.5), fmt=fmt, align=A_C)
+        put(ws, f"D{r}", comb or f"=B{r}+C{r}", f_calc(9.5), fmt=fmt, align=A_C)
+        if share:
+            put(ws, f"E{r}", f'=IFERROR(B{r}/D{r},"")', f_small(9), fmt=F_PCT, align=A_C)
+            put(ws, f"F{r}", f'=IFERROR(C{r}/D{r},"")', f_small(9), fmt=F_PCT, align=A_C)
+        # row notes on the right, only where a number needs explaining
+        note = {
+            "Clicks": "derived: CTR × impressions (the automation payload has no click column)",
+            "Reach (sum of days)": "sum of daily reach — a trend, not a headcount",
+            "CPM": "Meta CPM is derived from spend ÷ impressions",
+            "Frequency": "impressions ÷ reach",
+        }.get(lab)
+        if note:
+            put(ws, f"G{r}", note, f_tiny(8), align=A_LI)
+
+    # ---- combined funnel
+    r = first + len(rows) + 1
+    section_bar(ws, r, 1, 7, "  THE COMBINED FUNNEL")
+    r += 1
+    for i, h in enumerate(["Step", "Meta", "TikTok", "Combined", "Step rate", "Bar"]):
+        put(ws, f"{L(1+i)}{r}", h, f_h2(9), F_HEAD, align=A_LI if i == 0 else A_C)
+    r += 1
+    funnel_first = r
+    steps = [("Impressions", "$B$24", "$B$41", None),
+             ("Clicks", None, None, None),
+             ("Adds to cart", "$B$27", "$B$44", None),
+             ("Initiate Checkout", "$B$28", "$B$45", None),
+             ("Purchases", "$B$29", "$B$46", None)]
+    for i, (lab, mref, tref, _) in enumerate(steps):
+        rr = funnel_first + i
+        put(ws, f"A{rr}", lab, f_body(9.5), align=A_LI)
+        if lab == "Clicks":
+            put(ws, f"B{rr}", f"={IN}!$B$23*{IN}!$B$24", f_calc(9.5), fmt=F_INT, align=A_C)
+            put(ws, f"C{rr}", f"={IN}!$B$40*{IN}!$B$41", f_calc(9.5), fmt=F_INT, align=A_C)
+        else:
+            put(ws, f"B{rr}", f"={IN}!{mref}", f_calc(9.5), fmt=F_INT, align=A_C)
+            put(ws, f"C{rr}", f"={IN}!{tref}", f_calc(9.5), fmt=F_INT, align=A_C)
+        put(ws, f"D{rr}", f"=B{rr}+C{rr}", f_calc(9.5), fmt=F_INT, align=A_C)
+        if i < len(steps) - 1:
+            put(ws, f"E{rr}", f"=IFERROR(D{rr+1}/D{rr},0)", f_calc(9.5), fmt=F_PCT, align=A_C)
+            put(ws, f"F{rr}", f'=REPT("█",ROUND(20*IFERROR(D{rr+1}/D{rr},0),0))',
+                Font(name="Inter", size=9, color=ACCENT_DK), align=A_LI)
+
+    # ---- who is earning their keep
+    r = funnel_first + len(steps) + 1
+    section_bar(ws, r, 1, 7, "  WHICH PLATFORM IS EARNING ITS KEEP")
+    r += 1
+    for i, h in enumerate(["Platform", "Share of spend", "Share of revenue", "Difference", "Read"]):
+        put(ws, f"{L(1+i)}{r}", h, f_h2(9), F_HEAD, align=A_LI if i == 0 else A_C)
+    r += 1
+    for i, (plat, sp_ref, rev_ref) in enumerate([("Meta", "$B$22", "$B$31"),
+                                                 ("TikTok", "$B$38", "$B$48")]):
+        rr = r + i
+        put(ws, f"A{rr}", plat, f_body(9.5), align=A_LI)
+        put(ws, f"B{rr}", f"=IFERROR({IN}!{sp_ref}/{IN}!$D$13,0)", f_calc(9.5), fmt=F_PCT, align=A_C)
+        put(ws, f"C{rr}", f"=IFERROR({IN}!{rev_ref}/{IN}!$D$16,0)", f_calc(9.5), fmt=F_PCT, align=A_C)
+        put(ws, f"D{rr}", f"=C{rr}-B{rr}", f_calc(9.5), fmt="+0.0%;-0.0%", align=A_C)
+        put(ws, f"E{rr}", f'=IF(C{rr}=0,"",IF(D{rr}>0.02,"Pulling more than its weight — revenue share is ahead of spend share.",'
+                           f'IF(D{rr}<-0.02,"Costing more than it returns — spend share is ahead of revenue share.",'
+                           f'"Roughly balanced with its budget share.")))', f_small(9), align=A_LI)
+    r += 2
+    ws.merge_cells(f"A{r}:G{r}")
+    verdict_cell(ws, f"A{r}",
+                 f'="Blended ROAS is "&ROUND({IN}!$D$17,2)&"x. Meta delivered "&ROUND({IN}!$B$32,2)&"x on "'
+                 f'&TEXT({IN}!$B$22/{IN}!$D$13,"0%")&" of the budget, TikTok "&ROUND({IN}!$B$49,2)&"x on "'
+                 f'&TEXT({IN}!$B$38/{IN}!$D$13,"0%")&". "'
+                 f'&IF({IN}!$B$32>{IN}!$B$49,"Meta is the more efficient channel this period.",'
+                 f'"TikTok is the more efficient channel this period.")',
+                 font=Font(name="Inter", size=10, bold=True, color=INK), fill_=F_PANEL)
+    for c in range(1, 8):
+        ws.cell(row=r, column=c).fill = F_PANEL
+    ws.row_dimensions[r].height = 30
+    return ws
+
+
 # ==================================================================== BUILD
 def build():
     wb = Workbook()
@@ -707,6 +836,7 @@ def build():
     sheet_exec(wb)
     sheet_performance(wb)
     sheet_platform(wb)
+    sheet_combined(wb)
     sheet_top_ads(wb, creative=False)
     sheet_top_ads(wb, creative=True)
     sheet_weekly(wb)
