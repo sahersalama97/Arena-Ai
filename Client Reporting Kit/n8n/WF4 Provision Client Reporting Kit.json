@@ -91,7 +91,7 @@
         "fileId": {
           "__rl": true,
           "mode": "id",
-          "value": "1TQax9tFM_cFk8c15Mt60xPcJj3TGqh0ZSP68i1Z6dX4"
+          "value": "1LT44dvW6b3iuhvUDA9k_zUuRlz4KUXTqxDXinq4dP9s"
         },
         "name": "={{ $json.Brand_Name }} - Reporting Dashboard (LIVE)",
         "options": {}
@@ -330,7 +330,7 @@
         "options": {
           "appendAttribution": false
         },
-        "text": "=Copying the dashboard template did not work, so no Kit_Sheet_ID was saved.\n\nBrand: {{ $('Loop brands').item.json.Brand_Name }}\nTemplate ID: 1TQax9tFM_cFk8c15Mt60xPcJj3TGqh0ZSP68i1Z6dX4\nError: {{ $json.error ? JSON.stringify($json.error) : ($json.message || 'see the n8n execution log') }}\n\nUsual cause: the template was moved, renamed or trashed. The ID above must point at 'TEMPLATE - Client Reporting Dashboard (Meta + TikTok)'."
+        "text": "=Copying the dashboard template did not work, so no Kit_Sheet_ID was saved.\n\nBrand: {{ $('Loop brands').item.json.Brand_Name }}\nTemplate ID: 1LT44dvW6b3iuhvUDA9k_zUuRlz4KUXTqxDXinq4dP9s\nError: {{ $json.error ? JSON.stringify($json.error) : ($json.message || 'see the n8n execution log') }}\n\nUsual cause: the template was moved, renamed or trashed. The ID above must point at 'TEMPLATE - Client Reporting Dashboard (Meta + TikTok)'."
       },
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,

@@ -68,7 +68,7 @@ node and re-pick the credential.
 WF4's **Copy kit template** node points at:
 
 ```
-1TQax9tFM_cFk8c15Mt60xPcJj3TGqh0ZSP68i1Z6dX4
+1LT44dvW6b3iuhvUDA9k_zUuRlz4KUXTqxDXinq4dP9s
 ```
 
 That is `TEMPLATE - Client Reporting Dashboard (Meta + TikTok)` in your Drive. If

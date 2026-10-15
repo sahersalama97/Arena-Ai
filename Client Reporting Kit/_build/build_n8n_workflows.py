@@ -19,7 +19,7 @@ OUT_DIR = os.path.join(os.path.dirname(HERE), "n8n")  # Client Reporting Kit/n8n
 
 # ---- IDs from this install ---------------------------------------------------
 REGISTRY_ID = "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"   # Brand Registry, tab Sheet1
-KIT_TEMPLATE_ID = "1TQax9tFM_cFk8c15Mt60xPcJj3TGqh0ZSP68i1Z6dX4"  # TEMPLATE - Client Reporting Dashboard
+KIT_TEMPLATE_ID = "1LT44dvW6b3iuhvUDA9k_zUuRlz4KUXTqxDXinq4dP9s"  # TEMPLATE - Client Reporting Dashboard
 OWNER_EMAIL = "sahersalama97@gmail.com"
 
 SHEETS = {"googleSheetsOAuth2Api": {"id": "SBl4DBB9PIqzy5w0", "name": "Ai Saher Google Sheets"}}
