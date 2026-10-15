@@ -161,7 +161,8 @@ IDs and the five names you gave them.
 ## Step 5 — Make the workflows yours
 
 The ten workflow files contain the original author's sheet IDs, credential IDs and email
-addresses — about 100 values. Do not edit them by hand.
+addresses — **17 distinct values appearing 254 times** between them. Do not edit them by
+hand.
 
 Open `_build/personalise_workflows.py` and fill in the `CONFIG` block at the top with the
 values you wrote down in Steps 2, 3 and 4. Then run:
@@ -188,9 +189,41 @@ python3 "_build/personalise_workflows.py" --check
 ✔ **Check:** the script printed `Done. Import the 10 files…` and the leftover check said
 `none`. If it printed the `TEST_MODE` warning, that's expected — read Step 9.
 
-**Can't run Python?** You can find-and-replace the old values in the JSON files directly.
-Run `--check` first to get the exact list. Afterwards confirm the node counts, because a
-bad replace can quietly break the JSON:
+**Can't run Python?** (This is the normal case if you downloaded the kit from Google Drive
+rather than the git repo.) Open each of the ten JSON files in a text editor and use
+find-and-replace with exactly these 17 values. The table is complete — there is nothing
+else to change.
+
+| Find this exact string | Replace with | Times it appears |
+|---|---|---|
+| `1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU` | your **Brand Registry Id** value | 15 |
+| `1_FdrtJsPsi8bi2K55P1vUn-Y_bzb5cQGwIkrzdzJ3Fs` | your **Raw Template Id** value | 22 |
+| `1ENZCyFBgTNiPuE7nRz5ofic5pao_zjdhwiFLIEyo5LE` | your **Report Template Id** value | 10 |
+| `1LT44dvW6b3iuhvUDA9k_zUuRlz4KUXTqxDXinq4dP9s` | your **Kit Template Id** value | 2 |
+| `SBl4DBB9PIqzy5w0` | your **Cred Google Sheets Id** value | 54 |
+| `Ai Saher Google Sheets` | your **Cred Google Sheets Name** value | 54 |
+| `5KJlnp3mTAKGBAdb` | your **Cred Google Drive Id** value | 6 |
+| `Ai Saher Google Drive` | your **Cred Google Drive Name** value | 6 |
+| `cEBcWP6Pk9IcmcvL` | your **Cred Smtp Id** value | 11 |
+| `Report Email SMTP` | your **Cred Smtp Name** value | 11 |
+| `zzQuQyhvHs6xuSu1` | your **Cred Gmail Id** value | 11 |
+| `n8n Gmail TikTok Reports` | your **Cred Gmail Name** value | 11 |
+| `qQUVSfCeWtFUWkkM` | your **Cred Meta Id** value | 3 |
+| `Meta-Access Tokens` | your **Cred Meta Name** value | 3 |
+| `sahersalama97@gmail.com` | your **Owner Email** value | 31 |
+| `saherahmed773@gmail.com` | your **Owner Email** value | 1 |
+| `thebreadbutteragency@gmail.com` | your **Owner Email** value | 3 |
+
+Replace **both** halves of each credential pair: the ID and the display name, or n8n will
+show the original author's credential name next to your own credential.
+
+Two strings you should **not** touch:
+
+- `PASTE_YOUR_EMAIL@example.com` — a safety catch, not a mistake. WF4 refuses to share a
+  client sheet with it, so nothing goes to the wrong address. Leave it until Step 9.
+- The 64-character `meta.instanceId` values — n8n rewrites those on import.
+
+Afterwards confirm the node counts, because a bad replace can quietly break the JSON:
 
 ```
 00 = 31   01 = 12   02 = 13   03 = 16   04 = 16

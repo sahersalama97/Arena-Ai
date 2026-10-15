@@ -13,7 +13,7 @@ Built to pair with the **Automated Ads Reporting System** already in this repo (
 >
 > The ten workflow JSONs are in [`n8n/workflows/`](n8n/workflows), numbered in the order you
 > import them. Run [`_build/personalise_workflows.py`](_build/personalise_workflows.py)
-> once to replace the ~100 hardcoded IDs, credentials and email addresses with your own —
+> once to replace all 254 hardcoded IDs, credentials and email addresses with your own —
 > it refuses to run until they're all filled in, and re-checks its own output afterwards.
 
 ---
