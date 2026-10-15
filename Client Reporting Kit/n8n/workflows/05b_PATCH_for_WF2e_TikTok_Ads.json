@@ -1,0 +1,134 @@
+{
+  "name": "PATCH - WF2e TikTok Ads Upsert (copy these 3 nodes into WF2e)",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $('Loop Brands Ads').first().json.Raw_Sheet_ID }}/values/{{ encodeURIComponent(\"'Daily_Raw_TikTok_Ads'!A:W\") }}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "options": {}
+      },
+      "id": "b7c1f0a4-2d51-4c66-9a3f-0e5f1c2b7a10",
+      "name": "Read existing TikTok ad rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1360,
+        928
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "UNFORMATTED_VALUE + SERIAL_NUMBER means Date comes back as a serial number and Ad_ID as whatever it really is (string OR number). The Code node normalises both. If this read fails nothing is written for the brand -- error output goes to the alert node."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Ported from WF1bu 'Plan row writes', adapted for Daily_Raw_TikTok_Ads.\n// Reads the sheet as it actually is, normalises BOTH key fields to a canonical\n// string, then emits explicit per-row ranges for values:batchUpdate.  Nothing\n// here lets Google guess a type: Date is written as a serial (the column already\n// holds real dates) and Ad_ID is written as text (so a 16-digit ID survives).\nconst SHEET = 'Daily_Raw_TikTok_Ads';\nconst need = ['Date','Ad_ID','Ad_Name','Campaign_Name','AdGroup_Name','Creative_Key','Spend','Impressions','Reach','CPM','Clicks','CTR_Pct','Profile_Visits','Follows','Adds_to_Cart','Initiate_Checkout','Purchases','Purchases_Value','ROAS','AOV','Purchase_CVR_Pct','Pulled_At','Frequency'];\n\nconst EPOCH = Date.UTC(1899, 11, 30);            // Google Sheets serial epoch\n\n// Date -> 'YYYY-MM-DD'.  Accepts a serial number, an ISO string, or a datetime\n// string, because the sheet currently holds real dates while the incoming CSV\n// holds text.  This is the function that makes matching work.\nfunction normDate(v) {\n  if (typeof v === 'number' && v > 20000 && v < 80000) {\n    return new Date(EPOCH + Math.round(v) * 86400000).toISOString().slice(0, 10);\n  }\n  const s = String(v == null ? '' : v).trim();\n  return /^\\d{4}-\\d{2}-\\d{2}/.test(s) ? s.slice(0, 10) : s;\n}\n\n// 'YYYY-MM-DD' -> Sheets serial number, so the Date column keeps its existing\n// real-date type instead of turning into text like Daily_Raw_Meta_Ads did.\nfunction dateSerial(iso) {\n  const m = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(iso || ''));\n  if (!m) return iso;                            // leave anything unexpected alone\n  const t = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));\n  return (t - EPOCH) / 86400000;\n}\n\n// Ad_ID -> plain digit string.  toFixed(0) matters: it stops a 16-digit ID from\n// being emitted in exponential notation, which would never match anything.\nfunction normId(v) {\n  if (typeof v === 'number') return v.toFixed(0);\n  return String(v == null ? '' : v).trim();\n}\n\nconst rows = $('Explode ad rows').all().map(i => i.json).filter(r => r && (r.Date || r.Ad_ID));\nconst resp = $input.first().json;\nconst values = Array.isArray(resp && resp.values) ? resp.values : [];\nif (!values.length) throw new Error('Sheet returned no header row - not writing');\n\nconst header = values[0].map(h => String(h).trim());\nconst missing = need.filter(c => !header.includes(c));\nif (missing.length) throw new Error('Header mismatch, missing: ' + missing.join(', '));\nif (header.length > 30) throw new Error('Unexpected column count: ' + header.length);\n\nconst iD = header.indexOf('Date'), iA = header.indexOf('Ad_ID');\n\n// Index what is already there.  Later duplicate wins nothing: we keep the row\n// with the NEWEST Pulled_At, because a re-pull of the same ad-day is a correction.\nconst iP = header.indexOf('Pulled_At');\nconst existing = new Map();\nlet dupes = 0;\nfor (let r = 1; r < values.length; r++) {\n  const row = values[r] || [];\n  const d = normDate(row[iD]), a = normId(row[iA]);\n  if (!d || !a) continue;                        // blank line in the sheet\n  const k = d + '|' + a;\n  if (existing.has(k)) {\n    dupes++;\n    const prev = values[existing.get(k) - 1] || [];\n    if (String(row[iP] || '') > String(prev[iP] || '')) existing.set(k, r + 1);\n  } else {\n    existing.set(k, r + 1);\n  }\n}\n\n// Collapse this run's rows on the same key too, so one run cannot create a dupe.\nconst byKey = new Map();\nfor (const row of rows) {\n  const k = normDate(row.Date) + '|' + normId(row.Ad_ID);\n  if (!k.startsWith('|') && k.length > 1) byKey.set(k, row);\n}\n\nlet next = values.length + 1;\nconst last = String.fromCharCode(64 + header.length);\nconst data = [];\nlet updated = 0, appended = 0;\nconst textFixed = [];\nfor (const [k, row] of byKey) {\n  let n = existing.get(k);\n  if (n) { updated++; } else { n = next++; appended++; }\n  const arr = header.map(h => {\n    let v = row[h];\n    if (v === undefined || v === null) v = '';\n    if (h === 'Ad_ID') v = String(v);                        // never a number\n    else if (h === 'Date') v = dateSerial(normDate(v));      // serial, stays a date\n    return v;\n  });\n  // Report any row we are about to overwrite that currently holds a numeric\n  // Ad_ID, so the one-off cleanup can be verified.\n  if (n) {\n    const cur = (values[n - 1] || [])[iA];\n    if (typeof cur === 'number') textFixed.push(k);\n  }\n  data.push({ range: \"'\" + SHEET + \"'!A\" + n + ':' + last + n, values: [arr] });\n}\n// Never hand a malformed range to the Sheets API. A partial batchUpdate is worse\n// than a failed one, so fail loudly here instead.\nfor (const d of data) {\n  if (!/^'[^']+'!A\\d+:[A-Z]+\\d+$/.test(d.range)) throw new Error('Bad write range: ' + d.range);\n}\nreturn [{ json: { data, updated, appended, existing_duplicates: dupes, numeric_ids_repaired: textFixed } }];\n"
+      },
+      "id": "b7c1f0a4-2d51-4c66-9a3f-0e5f1c2b7a11",
+      "name": "Plan TikTok ad row writes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1580,
+        928
+      ],
+      "notes": "Returns one item carrying the whole batchUpdate payload plus counters (updated / appended / existing_duplicates / numeric_ids_repaired). Log those counters: existing_duplicates > 0 means the sheet still has duplicated ad-days from before this patch was installed."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $('Loop Brands Ads').first().json.Raw_Sheet_ID }}/values:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ valueInputOption: 'RAW', data: $json.data }) }}",
+        "options": {}
+      },
+      "id": "b7c1f0a4-2d51-4c66-9a3f-0e5f1c2b7a12",
+      "name": "Write TikTok ad rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1800,
+        928
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "RAW is the whole point: Google stores exactly what we send, so the Ad_ID string is never re-parsed as a 16-digit number. Explicit row numbers make a retry safe -- the same rows are rewritten, not appended."
+    }
+  ],
+  "connections": {
+    "Read existing TikTok ad rows": {
+      "main": [
+        [
+          {
+            "node": "Plan TikTok ad row writes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan TikTok ad row writes": {
+      "main": [
+        [
+          {
+            "node": "Write TikTok ad rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write TikTok ad rows": {
+      "error": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": [],
+  "_patch": {
+    "target_workflow": "WF2e TikTok Scheduled Report Email Import (Raw Only) FIXED",
+    "removes_node": "Upsert Daily_Raw_TikTok_Ads",
+    "rewire": "Explode ad rows  ->  Read existing TikTok ad rows  ->  Plan TikTok ad row writes  ->  Write TikTok ad rows  ->  (whatever Upsert Daily_Raw_TikTok_Ads was connected to)",
+    "why": "See WF2e_FIX_TikTok_Raw_Integrity.md in this folder."
+  }
+}

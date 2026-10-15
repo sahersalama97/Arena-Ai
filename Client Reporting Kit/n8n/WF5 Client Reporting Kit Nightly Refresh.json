@@ -1,0 +1,583 @@
+{
+  "name": "WF5 Client Reporting Kit Nightly Refresh",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "name": "Manual Test",
+      "position": [
+        -1900,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 14 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "name": "Daily 14:00",
+      "position": [
+        -1900,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "name": "Read Brand Registry",
+      "position": [
+        -1660,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// A brand is refreshable when it is active, its pipeline has a Raw sheet, and\n// WF4 has already given it a dashboard of its own. Anything else is skipped\n// silently rather than failing the run -- WF4 will pick it up on its next pass.\nreturn items.filter(i => {\n  const j = i.json || {};\n  return (j.Status || '').toLowerCase() === 'active' && j.Raw_Sheet_ID && j.Kit_Sheet_ID;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "name": "Filter brands with a kit",
+      "position": [
+        -1420,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "name": "Loop brands",
+      "position": [
+        -1180,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $('Loop brands').item.json.Raw_Sheet_ID }}/values:batchGet?ranges={{ encodeURIComponent(\"'Daily_Raw_Meta'!A:Z\") }}&ranges={{ encodeURIComponent(\"'Daily_Raw_TikTok'!A:Z\") }}&ranges={{ encodeURIComponent(\"'Daily_Raw_Meta_Ads'!A:Z\") }}&ranges={{ encodeURIComponent(\"'Daily_Raw_TikTok_Ads'!A:Z\") }}&majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "name": "Fetch raw tabs",
+      "position": [
+        -940,
+        520
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Turns one brand's four raw tabs into the two shapes the Client Reporting Kit\n// reads, and decides which two periods to compare.\n//\n// DATES GO OUT AS SHEETS SERIAL NUMBERS, NOT ISO STRINGS. The write uses\n// valueInputOption RAW, which preserves JSON types: a number lands in the\n// pre-formatted date column as a real date. A string would land as TEXT and\n// silently zero every date-bounded SUMIFS in the kit. That is exactly the bug\n// Daily_Raw_Meta_Ads already has, because it is written with RAW too.\n//\n// Columns are matched BY HEADER NAME, not by position, so the kit keeps working\n// if a raw template ever gains or reorders a column. Positional mapping breaks\n// silently instead -- it fills the wrong metric and nothing looks wrong.\n\nconst WINDOW_DAYS = 7;          // report the last N complete days vs the N before\nconst EPOCH = Date.UTC(1899, 11, 30);\nconst DAY = 86400000;\n\nfunction num(v) {\n  if (v === null || v === undefined || v === '') return 0;\n  const n = Number(v);\n  return Number.isFinite(n) ? n : 0;\n}\n\n// Accepts a Sheets serial, an ISO string, or anything Date can parse.\n// Returns a serial number, or '' when the value is not a usable date.\nfunction serial(v) {\n  if (v === null || v === undefined || v === '') return '';\n  if (typeof v === 'number') return (v > 20000 && v < 80000) ? v : '';\n  const m = /^(\\d{4})-(\\d{2})-(\\d{2})/.exec(String(v).trim());\n  if (m) return Math.round((Date.UTC(+m[1], +m[2] - 1, +m[3]) - EPOCH) / DAY);\n  const d = new Date(String(v));\n  if (isNaN(d.getTime())) return '';\n  return Math.round((Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - EPOCH) / DAY);\n}\n\nfunction isoOf(day) {\n  return new Date(EPOCH + Math.round(day) * DAY).toISOString().slice(0, 10);\n}\n\nfunction table(valueRange) {\n  const rows = (valueRange && valueRange.values) || [];\n  const head = (rows[0] || []).map(h => String(h === null || h === undefined ? '' : h).trim());\n  const idx = {};\n  head.forEach((h, k) => { if (h && !(h in idx)) idx[h] = k; });\n  return {\n    header: head,\n    rows: rows.slice(1).filter(r => r && r.length),\n    // first name in `names` that this tab actually has\n    pick(r, names) {\n      for (const n of names) {\n        if (n in idx) { const v = r[idx[n]]; return v === undefined ? '' : v; }\n      }\n      return '';\n    }\n  };\n}\n\nconst valueRanges = ($json && $json.valueRanges) || [];\nconst brand = $('Loop brands').item.json;\n\n// batchGet OMITS ranges that came back empty, so match on the quoted sheet name\n// rather than on position. 'Daily_Raw_Meta' is a prefix of 'Daily_Raw_Meta_Ads',\n// hence the exact \"'name'!\" test.\nfunction findTab(name) {\n  const needle = \"'\" + name + \"'!\";\n  return table(valueRanges.find(v => v && typeof v.range === 'string' && v.range.indexOf(needle) === 0));\n}\n\nconst meta = findTab('Daily_Raw_Meta');\nconst tt = findTab('Daily_Raw_TikTok');\nconst metaAds = findTab('Daily_Raw_Meta_Ads');\nconst ttAds = findTab('Daily_Raw_TikTok_Ads');\n\nconst present = [];\nif (!meta.header.length) present.push('Daily_Raw_Meta');\nif (!tt.header.length) present.push('Daily_Raw_TikTok');\nif (!metaAds.header.length) present.push('Daily_Raw_Meta_Ads');\nif (!ttAds.header.length) present.push('Daily_Raw_TikTok_Ads');\nif (present.length === 4) {\n  throw new Error('None of the four raw tabs came back for ' + brand.Brand_Name +\n                  '. Is Raw_Sheet_ID correct, and is the sheet shared with the n8n Google account?');\n}\n\n// ---------------------------------------------------------------- FUNDAMENTALS\n// Meta reports landing page views only at AD level, never account level, and\n// TikTok does not report them at all. So sum the ad-level tab up by date --\n// without this the Meta click-to-landing-page rate reads 0.0% and looks broken.\nconst lpvByDate = {};\nmetaAds.rows.forEach(r => {\n  const d = serial(metaAds.pick(r, ['Date']));\n  if (d === '') return;\n  lpvByDate[d] = (lpvByDate[d] || 0) + num(metaAds.pick(r, ['LPV']));\n});\n\nfunction fundRow(t, r, platform, lpv) {\n  return [\n    serial(t.pick(r, ['Date'])),\n    platform,\n    num(t.pick(r, ['Spend'])),\n    num(t.pick(r, ['Impressions'])),\n    num(t.pick(r, ['Reach'])),\n    num(t.pick(r, ['Clicks'])),\n    lpv,\n    num(t.pick(r, ['Adds_to_Cart', 'Add to Cart'])),\n    num(t.pick(r, ['Initiate_Checkout', 'Initiate Checkout'])),\n    num(t.pick(r, ['Purchases'])),\n    num(t.pick(r, ['Purchases_Value', 'Purchases Value']))\n  ];\n}\n\nconst fundRows = [];\nmeta.rows.forEach(r => {\n  const d = serial(meta.pick(r, ['Date']));\n  if (d === '') return;\n  fundRows.push(fundRow(meta, r, 'Meta', lpvByDate[d] || ''));\n});\ntt.rows.forEach(r => {\n  const d = serial(tt.pick(r, ['Date']));\n  if (d === '') return;\n  fundRows.push(fundRow(tt, r, 'TikTok', ''));\n});\n\n// -------------------------------------------------------------------- AD DATA\nfunction adRow(t, r, platform) {\n  const d = serial(t.pick(r, ['Date']));\n  const name = String(t.pick(r, ['Ad_Name', 'Ad Name']) || '').trim();\n  if (d === '' || !name) return null;          // no name = nothing to rank on\n  return [\n    d, platform, name,\n    String(t.pick(r, ['Campaign_Name', 'Campaign Name']) || ''),\n    String(t.pick(r, ['AdSet_Name', 'AdGroup_Name', 'Ad Set', 'Ad Group']) || ''),\n    String(t.pick(r, ['Creative_Key', 'Creative Key']) || ''),\n    num(t.pick(r, ['Spend'])),\n    num(t.pick(r, ['Impressions'])),\n    num(t.pick(r, ['Clicks'])),\n    num(t.pick(r, ['Purchases'])),\n    num(t.pick(r, ['Purchases_Value', 'Purchases Value']))\n  ];\n}\n\n// De-duplicate on (Date, Ad_ID) before emitting, keeping the most recently\n// PULLED version. The Meta ad-level sync already upserts on Date|Ad_ID upstream;\n// the TikTok CSV import appends instead, so one ad-day can appear twice -- once\n// per sync run -- and quietly double its spend and revenue. The two copies are\n// not identical: TikTok restates reach and conversions as attribution matures,\n// so which one you keep changes the numbers. Newest Pulled_At wins.\n// NOTE: in the raw sheet the newest row is often FIRST, so \"last row wins\"\n// would keep the stale copy. Rank on Pulled_At explicitly.\nfunction pulledRank(v) {\n  if (v === null || v === undefined || v === '') return 0;\n  const t = Date.parse(String(v));\n  if (!isNaN(t)) return t;\n  const n = Number(v);\n  return Number.isFinite(n) ? n * DAY : 0;          // a Sheets serial\n}\n\nconst adRows = [];\nlet duplicateAdRowsRemoved = 0;\nfunction collect(t, platform) {\n  const byKey = new Map();\n  const rankByKey = new Map();\n  t.rows.forEach(r => {\n    const d = serial(t.pick(r, ['Date']));\n    const x = adRow(t, r, platform);\n    if (d === '' || !x) return;\n    const adId = String(t.pick(r, ['Ad_ID', 'Ad ID', 'ad_id']) || '').trim();\n    const key = d + '|' + (adId || (x[2] + '|' + x[3] + '|' + x[4]));\n    const rank = pulledRank(t.pick(r, ['Pulled_At', 'Pulled At']));\n    if (byKey.has(key)) {\n      duplicateAdRowsRemoved++;\n      if (rank < rankByKey.get(key)) return;        // older pull: ignore it\n    }\n    byKey.set(key, x);\n    rankByKey.set(key, rank);\n  });\n  byKey.forEach(x => adRows.push(x));\n}\ncollect(metaAds, 'Meta');\ncollect(ttAds, 'TikTok');\n\n// Sort so the sheet reads chronologically. The formulas do not care about order,\n// but a human scanning Fundamentals does.\nconst byThenPlat = (a, b) => (a[0] - b[0]) || (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0);\nfundRows.sort(byThenPlat);\nadRows.sort(byThenPlat);\n\n// ------------------------------------------------------- WHICH PERIOD TO REPORT\n// Drop a trailing day only when it is obviously mid-sync: impressions recorded\n// but no reach. Then report the last WINDOW_DAYS complete days against the\n// WINDOW_DAYS before them. Comparing against a half-written day is how a\n// dashboard ends up telling the client the wrong story.\nconst byDate = {};\nfundRows.forEach(r => { (byDate[r[0]] = byDate[r[0]] || []).push(r); });\nconst days = Object.keys(byDate).map(Number).sort((a, b) => a - b);\nconst droppedPartial = [];\nconst isPartial = d => byDate[d].some(r => num(r[3]) > 0 && num(r[4]) === 0);\nwhile (days.length && isPartial(days[days.length - 1])) droppedPartial.push(isoOf(days.pop()));\n\nlet cur, cmp;\nif (days.length >= 2 * WINDOW_DAYS) {\n  cur = days.slice(-WINDOW_DAYS);\n  cmp = days.slice(-2 * WINDOW_DAYS, -WINDOW_DAYS);\n} else if (days.length >= 2) {\n  // Not enough history yet (new client). Split what exists rather than failing.\n  const half = Math.floor(days.length / 2);\n  cur = days.slice(half);\n  cmp = days.slice(0, half);\n} else {\n  cur = days.slice();\n  cmp = [];\n}\n\nconst span = a => a.length ? isoOf(a[0]) + ' to ' + isoOf(a[a.length - 1]) : 'none';\n\n// ------------------------------------------------------------------- _CONTROL\n// Written as one 7x2 block, keys included, so the tab self-heals if a human ever\n// reorders or retypes it. Row order must stay as the template ships it.\nconst control = [\n  ['Current_Start', cur.length ? cur[0] : ''],\n  ['Current_End', cur.length ? cur[cur.length - 1] : ''],\n  ['Compare_Start', cmp.length ? cmp[0] : ''],\n  ['Compare_End', cmp.length ? cmp[cmp.length - 1] : ''],\n  ['Brand_Name', brand.Brand_Name || ''],\n  ['Last_Refresh', (Date.now() - EPOCH) / DAY],\n  ['Rows_Synced', adRows.length]\n];\n\nconst data = [];\nif (fundRows.length) data.push({ range: \"'Fundamentals'!A2:K\" + (1 + fundRows.length), values: fundRows });\nif (adRows.length) data.push({ range: \"'Ad Data'!A2:K\" + (1 + adRows.length), values: adRows });\ndata.push({ range: \"'_Control'!A2:B8\", values: control });\n\nreturn [{\n  json: {\n    brand: brand.Brand_Name || '',\n    kitId: brand.Kit_Sheet_ID,\n    data: data,\n    clearRanges: [\"'Fundamentals'!A2:K6000\", \"'Ad Data'!A2:K6000\"],\n    fundRows: fundRows.length,\n    adRows: adRows.length,\n    duplicateAdRowsRemoved: duplicateAdRowsRemoved,\n    daysKept: days.length,\n    missingTabs: present,\n    droppedPartialDays: droppedPartial,\n    currentPeriod: span(cur),\n    comparePeriod: span(cmp),\n    currentDays: cur.length,\n    compareDays: cmp.length\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "name": "Flatten to kit shape",
+      "position": [
+        -700,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "rows",
+              "leftValue": "={{ $json.fundRows + $json.adRows }}",
+              "operator": {
+                "operation": "gt",
+                "singleValue": false,
+                "type": "number"
+              },
+              "rightValue": 0
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "name": "Has rows to write?",
+      "position": [
+        -460,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $('Flatten to kit shape').item.json.kitId }}/values:clear",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ranges: $('Flatten to kit shape').item.json.clearRanges }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "name": "Clear kit data tabs",
+      "position": [
+        -220,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $('Flatten to kit shape').item.json.kitId }}/values:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ valueInputOption: 'RAW', data: $('Flatten to kit shape').item.json.data }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "name": "Write kit data",
+      "position": [
+        20,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "sahersalama97@gmail.com",
+        "subject": "=Kit refresh: cannot read raw data - {{ $('Loop brands').item.json.Brand_Name }}",
+        "options": {
+          "appendAttribution": false
+        },
+        "text": "=The batchGet against the Raw Data sheet did not return the four raw tabs.\n\nBrand: {{ $('Loop brands').item.json.Brand_Name }}\nRaw_Sheet_ID: {{ $('Loop brands').item.json.Raw_Sheet_ID }}\nKit_Sheet_ID: {{ $('Loop brands').item.json.Kit_Sheet_ID }}\nError: {{ $json.error ? JSON.stringify($json.error) : ($json.message || 'see the n8n execution log') }}\n\nUsual causes: the Raw sheet is not shared with the n8n Google account, a raw tab was renamed, or the sheet was deleted."
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "name": "Email fetch failure",
+      "position": [
+        -460,
+        760
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "sahersalama97@gmail.com",
+        "subject": "=Kit refresh: nothing to write - {{ $json.brand }}",
+        "options": {
+          "appendAttribution": false
+        },
+        "text": "=The raw tabs came back but produced no usable rows.\n\nBrand: {{ $json.brand }}\nFundamentals rows: {{ $json.fundRows }}\nAd rows: {{ $json.adRows }}\nDays found: {{ $json.daysKept }}\nTabs missing: {{ $json.missingTabs.join(', ') || 'none' }}\n\nNothing was written, so the dashboard still shows the previous refresh. Check whether the sync workflows ran for this brand."
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "name": "Email no data",
+      "position": [
+        -220,
+        760
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "sahersalama97@gmail.com",
+        "subject": "=Kit refresh: write failed - {{ $('Flatten to kit shape').item.json.brand }}",
+        "options": {
+          "appendAttribution": false
+        },
+        "text": "=Reading the raw data worked; writing the dashboard did not.\n\nBrand: {{ $('Flatten to kit shape').item.json.brand }}\nKit_Sheet_ID: {{ $('Flatten to kit shape').item.json.kitId }}\nError: {{ $json.error ? JSON.stringify($json.error) : ($json.message || 'see the n8n execution log') }}\n\nUsual causes: the dashboard tab was renamed (_Control, Fundamentals, Ad Data must keep their names), or the kit sheet was deleted or moved to trash."
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "name": "Email write failure",
+      "position": [
+        260,
+        620
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Runs once, after the loop has visited every brand. Collects the whole run into\n// a single email instead of one per client, so a morning glance answers\n// \"did every client's dashboard refresh?\" without opening twelve sheets.\n\nfunction safeAll(name) {\n  try {\n    const a = $(name).all();\n    return Array.isArray(a) ? a.map(i => i.json).filter(Boolean) : [];\n  } catch (e) {\n    return [];      // the node never ran (no brands qualified)\n  }\n}\n\nconst flats = safeAll('Flatten to kit shape');\nconst fetches = safeAll('Fetch raw tabs');\nconst writes = safeAll('Write kit data');\n\n// Pair each brand with its write result by index. Every branch emits exactly one\n// item per brand, so the positions line up.\nconst rows = flats.map((f, i) => {\n  const w = writes[i] || {};\n  const wrote = !w.error && (w.totalUpdatedCells > 0 || Array.isArray(w.responses));\n  return {\n    brand: f.brand || '(unknown)',\n    ok: wrote,\n    current: f.currentPeriod || 'none',\n    compare: f.comparePeriod || 'none',\n    days: f.currentDays || 0,\n    fundRows: f.fundRows || 0,\n    adRows: f.adRows || 0,\n    dupes: f.duplicateAdRowsRemoved || 0,\n    dropped: (f.droppedPartialDays || []).join(', ') || '-',\n    missing: (f.missingTabs || []).join(', ') || '-',\n    error: w.error ? JSON.stringify(w.error).slice(0, 300) : (wrote ? '' : 'write returned no confirmation')\n  };\n});\n\nconst okCount = rows.filter(r => r.ok).length;\nconst failed = rows.filter(r => !r.ok);\nconst totalDupes = rows.reduce((s, r) => s + r.dupes, 0);\nconst now = new Date().toISOString().slice(0, 16).replace('T', ' ');\n\nfunction esc(s) {\n  return String(s === null || s === undefined ? '' : s)\n    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n}\n\nconst th = 'text-align:left;padding:6px 10px;border-bottom:2px solid #d1d5db;font-size:12px;color:#374151';\nconst td = 'padding:6px 10px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#111827';\n\nlet body = '';\nbody += '<div style=\"font-family:Inter,Arial,sans-serif;max-width:900px\">';\nbody += '<h2 style=\"font-size:18px;color:#111827;margin:0 0 4px\">Client Reporting Kit — nightly refresh</h2>';\nbody += '<p style=\"font-size:13px;color:#6b7280;margin:0 0 16px\">' + esc(now) + ' UTC</p>';\n\nconst banner = failed.length === 0\n  ? '<div style=\"background:#dcfce7;color:#15803d;padding:10px 14px;border-radius:6px;font-size:14px;font-weight:600\">'\n    + okCount + ' of ' + rows.length + ' client dashboards refreshed. Nothing needs attention.</div>'\n  : '<div style=\"background:#fee2e2;color:#b91c1c;padding:10px 14px;border-radius:6px;font-size:14px;font-weight:600\">'\n    + failed.length + ' of ' + rows.length + ' clients did NOT refresh. See the rows marked ✗ below.</div>';\nbody += banner;\n\nif (rows.length) {\n  body += '<table style=\"border-collapse:collapse;width:100%;margin-top:18px\">';\n  body += '<tr>'\n       + '<th style=\"' + th + '\"></th>'\n       + '<th style=\"' + th + '\">Client</th>'\n       + '<th style=\"' + th + '\">Reporting period</th>'\n       + '<th style=\"' + th + '\">Compared with</th>'\n       + '<th style=\"' + th + '\">Days</th>'\n       + '<th style=\"' + th + '\">Fund rows</th>'\n       + '<th style=\"' + th + '\">Ad rows</th>'\n       + '<th style=\"' + th + '\">Dupes dropped</th>'\n       + '<th style=\"' + th + '\">Partial day dropped</th>'\n       + '</tr>';\n  rows.forEach(r => {\n    body += '<tr>'\n         + '<td style=\"' + td + '\">' + (r.ok ? '✓' : '✗') + '</td>'\n         + '<td style=\"' + td + ';font-weight:600\">' + esc(r.brand) + '</td>'\n         + '<td style=\"' + td + '\">' + esc(r.current) + '</td>'\n         + '<td style=\"' + td + '\">' + esc(r.compare) + '</td>'\n         + '<td style=\"' + td + '\">' + r.days + '</td>'\n         + '<td style=\"' + td + '\">' + r.fundRows + '</td>'\n         + '<td style=\"' + td + '\">' + r.adRows + '</td>'\n         + '<td style=\"' + td + '\">' + (r.dupes || '') + '</td>'\n         + '<td style=\"' + td + '\">' + esc(r.dropped) + '</td>'\n         + '</tr>';\n    if (!r.ok) {\n      body += '<tr><td></td><td colspan=\"8\" style=\"' + td + ';color:#b91c1c\">' + esc(r.error) + '</td></tr>';\n    }\n  });\n  body += '</table>';\n}\n\n// Two things a media buyer should never have to open a sheet to notice.\nconst notes = [];\nif (totalDupes > 0) {\n  notes.push('<b>' + totalDupes + ' duplicate ad rows were dropped.</b> The TikTok CSV import appends '\n    + 'instead of upserting on (Date, Ad_ID), so the same ad-day arrives once per sync run. The kit keeps '\n    + 'the newest pull and discards the rest, but the Raw sheet still holds both copies — which means '\n    + 'anything else reading Daily_Raw_TikTok_Ads at ad level is double-counting spend and revenue.');\n}\nconst partial = rows.filter(r => r.dropped && r.dropped !== '-');\nif (partial.length) {\n  notes.push('<b>' + partial.length + ' client(s) had a partial day dropped:</b> '\n    + partial.map(r => esc(r.brand) + ' (' + esc(r.dropped) + ')').join(', ')\n    + '. A day with impressions but no reach is mid-sync, so it was excluded rather than reported as a collapse.');\n}\nconst missing = rows.filter(r => r.missing && r.missing !== '-');\nif (missing.length) {\n  notes.push('<b>Missing raw tabs:</b> '\n    + missing.map(r => esc(r.brand) + ' — ' + esc(r.missing)).join('; ')\n    + '. Those platforms are simply absent from the dashboard, not zero.');\n}\nif (notes.length) {\n  body += '<div style=\"background:#fef3c7;border-left:4px solid #b45309;padding:12px 14px;margin-top:18px;border-radius:4px\">';\n  notes.forEach(n => { body += '<p style=\"font-size:12.5px;color:#7c2d12;margin:0 0 8px\">' + n + '</p>'; });\n  body += '</div>';\n}\n\nbody += '<p style=\"font-size:12px;color:#6b7280;margin-top:18px\">'\n     + 'Each dashboard re-ranks its own top ads, re-grades every metric against Benchmarks, and rewrites the '\n     + 'Meta, TikTok and blended commentary from these numbers. Open the Health Check tab of any dashboard '\n     + 'before sending it to a client — a red row there is a data problem, not a performance problem.'\n     + '</p></div>';\n\nreturn [{\n  json: {\n    subject: failed.length === 0\n      ? 'Kit refresh OK — ' + okCount + '/' + rows.length + ' dashboards updated'\n      : 'Kit refresh FAILED for ' + failed.length + ' of ' + rows.length + ' dashboards',\n    html: body,\n    okCount: okCount,\n    failedCount: failed.length,\n    duplicateAdRowsRemoved: totalDupes\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "name": "Summarise run",
+      "position": [
+        -1180,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "sahersalama97@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "options": {
+          "appendAttribution": false
+        },
+        "emailFormat": "html",
+        "html": "={{ $json.html }}"
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "name": "Email run summary",
+      "position": [
+        -940,
+        140
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "name": "Error Trigger",
+      "position": [
+        -1900,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "sahersalama97@gmail.com",
+        "subject": "Error in WF5 CLIENT REPORTING KIT REFRESH",
+        "message": "=Workflow: {{ $json.workflow.name }}\nFailed node: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.url }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "name": "Send a message",
+      "position": [
+        -1660,
+        40
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zzQuQyhvHs6xuSu1",
+          "name": "n8n Gmail TikTok Reports"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Read Brand Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 14:00": {
+      "main": [
+        [
+          {
+            "node": "Read Brand Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Brand Registry": {
+      "main": [
+        [
+          {
+            "node": "Filter brands with a kit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter brands with a kit": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop brands": {
+      "main": [
+        [
+          {
+            "node": "Summarise run",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch raw tabs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch raw tabs": {
+      "main": [
+        [
+          {
+            "node": "Flatten to kit shape",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email fetch failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten to kit shape": {
+      "main": [
+        [
+          {
+            "node": "Has rows to write?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has rows to write?": {
+      "main": [
+        [
+          {
+            "node": "Clear kit data tabs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email no data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear kit data tabs": {
+      "main": [
+        [
+          {
+            "node": "Write kit data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email write failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write kit data": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email write failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email fetch failure": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email no data": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email write failure": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarise run": {
+      "main": [
+        [
+          {
+            "node": "Email run summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

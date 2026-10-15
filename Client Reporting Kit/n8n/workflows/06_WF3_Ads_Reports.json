@@ -1,0 +1,782 @@
+{
+  "name": "WF3 GENERATE WEEKLY MONTHLY REPORTS",
+  "nodes": [
+    {
+      "id": "eca15ba6-1a56-4498-b92b-4766edfec560",
+      "parameters": {},
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2384,
+        2048
+      ]
+    },
+    {
+      "id": "a04f093c-fd54-409f-a9b8-92e31bf06922",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 13 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2384,
+        1840
+      ],
+      "notes": "13:00 Africa/Cairo daily. Month-to-date through yesterday. Sheets only, no email."
+    },
+    {
+      "id": "e8ea729e-695f-4c0f-ba9f-24022e1b9372",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * 1"
+            }
+          ]
+        }
+      },
+      "name": "Weekly Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2384,
+        2256
+      ],
+      "disabled": true
+    },
+    {
+      "id": "1e41a262-efa1-4b10-97d7-b019b65c1587",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 14 1 * *"
+            }
+          ]
+        }
+      },
+      "name": "Monthly Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2384,
+        2448
+      ],
+      "notes": "14:00 on the 1st: after the 13:00 daily run and after raw sheets are filled. Previous full month, writes sheets AND emails."
+    },
+    {
+      "id": "415863a9-185c-404e-86e7-57214ae6c262",
+      "parameters": {
+        "jsCode": "// Month-to-date through yesterday. On the 1st, \"yesterday\" is last month's final day, so the report shows that full previous month.\nconst end = $today.minus({days:1});\nconst start = end.startOf('month');\nconst range = start.day === end.day ? (start.day + ' ' + end.toFormat('MMM')) : (start.day + '-' + end.day + ' ' + end.toFormat('MMM'));\nreturn [{json:{periodStart:start.toISODate(), periodEnd:end.toISODate(), periodLabel:range, periodType:'daily'}}];"
+      },
+      "name": "Compute Period (Month-to-Date)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2128,
+        1840
+      ],
+      "notes": "Month-to-date through yesterday. Label like 1-4 Oct."
+    },
+    {
+      "id": "ed396301-27f7-4b34-a348-8bd8071269ff",
+      "parameters": {
+        "jsCode": "const start = $today.startOf('week').minus({weeks:1});\nconst end = start.plus({days:6});\nconst label = start.toFormat('MMM d') + ' - ' + end.toFormat('MMM d, yyyy') + ' (Weekly)';\nreturn [{json:{periodStart:start.toISODate(), periodEnd:end.toISODate(), periodLabel:label, periodType:'weekly'}}];"
+      },
+      "name": "Compute Period (Last Full Week)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2128,
+        2256
+      ],
+      "notes": "Weekly slice: previous Monday-Sunday."
+    },
+    {
+      "id": "70292485-c616-477f-83e4-129e8ccc018a",
+      "parameters": {
+        "jsCode": "const start = $today.minus({months:1}).startOf('month');\nconst end = start.endOf('month');\nconst label = start.toFormat('MMM d') + ' - ' + end.toFormat('MMM d, yyyy') + ' (Monthly)';\nreturn [{json:{periodStart:start.toISODate(), periodEnd:end.toISODate(), periodLabel:label, periodType:'monthly'}}];"
+      },
+      "name": "Compute Period (Previous Full Month)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2128,
+        2448
+      ],
+      "notes": "Monthly slice: previous full calendar month."
+    },
+    {
+      "id": "efb01774-197c-48da-8a87-ca5b04fa3cf7",
+      "parameters": {},
+      "name": "Set Period",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1872,
+        2080
+      ]
+    },
+    {
+      "id": "800a92b2-f329-4dfa-a2ab-3edb0a08787e",
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "options": {}
+      },
+      "name": "Read Brand Registry",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1872,
+        2256
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "3abaec08-2054-44ff-abf2-43363dce3ab6",
+      "parameters": {
+        "jsCode": "const clean = v => String(v == null ? '' : v).trim();\nconst ready = [];\nfor (const it of items) {\n  const j = it.json || {};\n  if (clean(j.Status).toLowerCase() !== 'active') continue;\n  const brand = {\n    ...j,\n    Brand_Name: clean(j.Brand_Name),\n    Raw_Sheet_ID: clean(j.Raw_Sheet_ID),\n    Current_Month_Report_Sheet_ID: clean(j.Current_Month_Report_Sheet_ID),\n  };\n  if (!brand.Brand_Name || !brand.Raw_Sheet_ID || !brand.Current_Month_Report_Sheet_ID) continue;\n  ready.push({ json: brand });\n}\nif (!ready.length) {\n  throw new Error('Brand Registry has no Active brand with Brand_Name, Raw_Sheet_ID and Current_Month_Report_Sheet_ID.');\n}\n// Two brands pointing at the same report workbook would overwrite each other.\nconst seen = {};\nfor (const it of ready) {\n  const id = it.json.Current_Month_Report_Sheet_ID;\n  if (seen[id]) {\n    throw new Error('Brand Registry: \"' + seen[id] + '\" and \"' + it.json.Brand_Name + '\" share the same Current_Month_Report_Sheet_ID. Fix the registry before running.');\n  }\n  seen[id] = it.json.Brand_Name;\n}\nreturn ready;"
+      },
+      "name": "Filter brands ready for reporting",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1632,
+        2256
+      ]
+    },
+    {
+      "id": "833ebafb-4750-4888-9257-01acb94ed0d5",
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "name": "Loop brands",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1392,
+        2256
+      ]
+    },
+    {
+      "id": "4bdc9dd9-3108-4f92-b386-5135d79ea6f4",
+      "parameters": {
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $('Loop brands').first().json.Raw_Sheet_ID }}/values:batchGet?{{ [\"'Daily_Raw_Meta'!A:P\",\"'Daily_Raw_Meta_Ads'!A:V\",\"'Daily_Raw_TikTok'!A:R\",\"'Daily_Raw_TikTok_Ads'!A:V\"].map(r => 'ranges=' + encodeURIComponent(r)).join('&') }}&majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "name": "Read Raw Sheets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1152,
+        2256
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput",
+      "notes": "ONE batchGet request reads all 4 raw tabs (Raw Sheets = source of truth). Errors are handled in Build Report so one bad brand cannot silently write zeros."
+    },
+    {
+      "id": "669715aa-8346-4435-a460-c611df23df17",
+      "parameters": {
+        "jsCode": "// ===================== CONFIG =====================\nconst REQUIRED_COLUMNS = ['Date', 'Spend', 'Impressions', 'Purchases', 'Purchases_Value'];\nconst NUMERIC_COLUMNS  = ['Spend', 'Impressions', 'Purchases', 'Purchases_Value'];\nconst TABS = [\n  { key: 'meta',    name: 'Daily_Raw_Meta',       needsAd: false },\n  { key: 'metaAds', name: 'Daily_Raw_Meta_Ads',   needsAd: true  },\n  { key: 'tt',      name: 'Daily_Raw_TikTok',     needsAd: false },\n  { key: 'ttAds',   name: 'Daily_Raw_TikTok_Ads', needsAd: true  },\n]; // order MUST match the \"ranges\" order in the \"Read Raw Sheets\" node\n// ==================================================\n\nconst period = $('Set Period').first().json;\nconst brand = $('Loop brands').first().json;\nconst payload = $('Read Raw Sheets').first().json || {};\nconst brandName = String(brand.Brand_Name || '').trim();\nconst reportSheetId = String(brand.Current_Month_Report_Sheet_ID || '').trim();\nconst base = { brandName, periodLabel: period.periodLabel, periodType: period.periodType, periodStart: period.periodStart, periodEnd: period.periodEnd };\nconst stop = (status, reason) => [{ json: { ...base, status, reason } }];\n\nif (!brandName || !reportSheetId) return stop('failed', 'Brand_Name or Current_Month_Report_Sheet_ID is empty in the Brand Registry.');\nif (payload.error || !Array.isArray(payload.valueRanges) || payload.valueRanges.length !== TABS.length) {\n  return stop('failed', 'Could not read the raw sheets: ' + JSON.stringify(payload.error || payload).slice(0, 400));\n}\n\n// ---------- helpers ----------\nfunction num(v) { if (v == null || v === '') return 0; const n = Number(v); return Number.isFinite(n) ? n : 0; }\nfunction round(n, p) { const f = 10 ** p; return Math.round(n * f) / f; }\nfunction toISODate(v) {\n  if (v == null || v === '') return '';\n  if (typeof v === 'number' || (/^\\d+(\\.\\d+)?$/.test(String(v).trim()) && Number(v) > 30000)) {\n    const ms = (Math.floor(Number(v)) - 25569) * 86400 * 1000; // Sheets serial -> UTC date\n    return new Date(ms).toISOString().slice(0, 10);\n  }\n  const s = String(v).trim();\n  if (/^\\d{4}-\\d{2}-\\d{2}/.test(s)) return s.slice(0, 10);\n  for (const f of ['M/d/yyyy', 'M/d/yy', 'MM/dd/yyyy', 'd/M/yyyy', 'd/M/yy', 'dd/MM/yyyy']) {\n    const dt = DateTime.fromFormat(s, f);\n    if (dt.isValid) return dt.toISODate();\n  }\n  const dt = DateTime.fromISO(s);\n  return dt.isValid ? dt.toISODate() : '';\n}\n\n// ---------- parse + filter each raw tab (NO fallback to \"all rows\") ----------\nconst sets = {};\nconst counts = {};\nconst warnings = [];\nconst problems = [];\nTABS.forEach((tab, i) => {\n  const values = Array.isArray(payload.valueRanges[i] && payload.valueRanges[i].values) ? payload.valueRanges[i].values : [];\n  sets[tab.key] = [];\n  counts[tab.key] = { totalRows: 0, inPeriod: 0, unparsedDates: 0 };\n  if (!values.length) return; // tab is completely empty: legitimate (e.g. no TikTok yet)\n  const headers = (values[0] || []).map(h => String(h == null ? '' : h).trim());\n  const missing = REQUIRED_COLUMNS.filter(c => !headers.includes(c));\n  if (tab.needsAd && !headers.includes('Ad_ID') && !headers.includes('Ad_Name')) missing.push('Ad_ID or Ad_Name');\n  if (missing.length) { problems.push(tab.name + ': missing column(s) ' + missing.join(', ')); return; }\n  const c = counts[tab.key];\n  const parsed = [];\n  for (const raw of values.slice(1)) {\n    if (!Array.isArray(raw) || !raw.some(v => v !== '' && v != null)) continue;\n    c.totalRows++;\n    const obj = {};\n    headers.forEach((h, idx) => { if (h) obj[h] = raw[idx] ?? ''; });\n    const d = toISODate(obj.Date);\n    if (!d) { c.unparsedDates++; continue; }\n    obj._d = d;\n    parsed.push(obj);\n  }\n  if (c.totalRows > 0 && parsed.length === 0) { problems.push(tab.name + ': none of the ' + c.totalRows + ' rows has a readable Date'); return; }\n  if (c.unparsedDates > 0) warnings.push(tab.name + ': ' + c.unparsedDates + ' row(s) skipped (unreadable Date)');\n  const inP = parsed.filter(r => r._d >= period.periodStart && r._d <= period.periodEnd);\n  c.inPeriod = inP.length;\n  for (const r of inP) for (const col of NUMERIC_COLUMNS) {\n    const v = r[col];\n    if (v !== '' && v != null && !Number.isFinite(Number(v))) problems.push(tab.name + ' ' + r._d + ' ' + col + ' = \"' + v + '\" is not a number');\n  }\n  sets[tab.key] = inP;\n});\nif (problems.length) return stop('failed', problems.slice(0, 5).join(' | '));\nif (TABS.every(t => sets[t.key].length === 0)) {\n  return stop('no_data', 'No raw rows for ' + period.periodStart + ' to ' + period.periodEnd + ' in any Daily_Raw_* tab. Existing report left untouched.');\n}\n\n// ---------- formatting ----------\nfunction fmtNum(v, d = 2) { return Number(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }\nfunction fmtInt(v) { return Math.round(Number(v) || 0).toLocaleString('en-US'); }\nfunction fmtMetric(metric, value) {\n  if (value === '' || value == null) return '';\n  if (['Impressions', 'Reach', 'Adds to cart', 'Initiate Checkout', 'Purchases', 'Profile Visits', 'Follows'].includes(metric)) return fmtInt(value);\n  if (metric.includes('CTR') || metric.includes('CVR')) return fmtNum(value, 2) + '%';\n  if (metric === 'Frequency' || metric === 'ROAS') return fmtNum(value, 2);\n  if (metric === 'Spend' || metric === 'CPM' || metric.includes('Cost') || metric === 'Purchases Value' || metric === 'AOV') return fmtNum(value, 2);\n  return String(value);\n}\nconst pad = (values, n, width) => { while (values.length < n) values.push(new Array(width).fill('')); return values; };\nconst toTable = (list, cols) => list.map((r, idx) => cols.map(c => (c === '' ? '' : (c === 'Rank' || c === '##') ? idx + 1 : (r[c] ?? ''))));\n\n// ---------- META ----------\nfunction metaOverview(rows) {\n  let spend = 0, impressions = 0, reach = 0, atc = 0, ic = 0, purchases = 0, pv = 0, clicks = 0;\n  for (const r of rows) { spend += num(r.Spend); impressions += num(r.Impressions); reach += num(r.Reach); atc += num(r.Adds_to_Cart); ic += num(r.Initiate_Checkout); purchases += num(r.Purchases); pv += num(r.Purchases_Value); clicks += num(r.Clicks); }\n  const frequency = reach ? impressions / reach : 0;\n  const ctr = impressions ? (clicks / impressions) * 100 : 0; // outbound clicks / impressions\n  const out = [\n    { Metric: 'Spend', Value: round(spend, 2) }, { Metric: 'Outbound CTR', Value: round(ctr, 4) },\n    { Metric: 'Impressions', Value: impressions }, { Metric: 'Reach', Value: reach },\n    { Metric: 'Frequency', Value: round(frequency, 2) }, { Metric: 'Adds to cart', Value: atc },\n    { Metric: 'Initiate Checkout', Value: ic }, { Metric: 'Purchases', Value: purchases },\n    { Metric: 'Cost Per Purchase', Value: round(purchases ? spend / purchases : 0, 2) },\n    { Metric: 'Purchases Value', Value: round(pv, 2) }, { Metric: 'ROAS', Value: round(spend ? pv / spend : 0, 4) },\n    { Metric: 'AOV', Value: round(purchases ? pv / purchases : 0, 2) },\n  ];\n  return pad(out.map(r => [r.Metric, fmtMetric(r.Metric, r.Value)]), 20, 2);\n}\nfunction metaAdPerformance(rows) {\n  const groups = {};\n  for (const r of rows) {\n    const key = r.Ad_ID || r.Ad_Name || '(unknown)';\n    if (!groups[key]) groups[key] = { Ad_Name: r.Ad_Name, Creative_Key: r.Creative_Key, spend: 0, impressions: 0, clicks: 0, lpv: 0, atc: 0, ic: 0, purchases: 0, pv: 0, reachMax: 0 };\n    const g = groups[key];\n    g.spend += num(r.Spend); g.impressions += num(r.Impressions); g.clicks += num(r.Clicks); g.lpv += num(r.LPV); g.atc += num(r.Adds_to_Cart); g.ic += num(r.Initiate_Checkout); g.purchases += num(r.Purchases); g.pv += num(r.Purchases_Value); g.reachMax = Math.max(g.reachMax, num(r.Reach));\n  }\n  const list = Object.values(groups).map(g => ({\n    'Ad Name': g.Ad_Name, 'Creative Key': g.Creative_Key, Spend: round(g.spend, 2),\n    CPM: round(g.impressions ? (g.spend / g.impressions) * 1000 : 0, 2), 'Outbound CTR': round(g.impressions ? (g.clicks / g.impressions) * 100 : 0, 4),\n    LPV: g.lpv, ATC: g.atc, 'Cost/ATC': round(g.atc ? g.spend / g.atc : 0, 2), 'ATC/LPV': round(g.lpv ? (g.atc / g.lpv) * 100 : 0, 4),\n    IC: g.ic, 'Cost/IC': round(g.ic ? g.spend / g.ic : 0, 2), Frequency: round(g.reachMax ? g.impressions / g.reachMax : 0, 2),\n    Purchases: g.purchases, 'Purchases Value': round(g.pv, 2), ROAS: round(g.spend ? g.pv / g.spend : 0, 4), AOV: round(g.purchases ? g.pv / g.purchases : 0, 2),\n    'Purchase CVR%': round(g.clicks ? (g.purchases / g.clicks) * 100 : 0, 4), 'Impressions (est.)': g.impressions, 'Clicks (est.)': g.clicks,\n  }));\n  list.sort((a, b) => b.Spend - a.Spend);\n  const cols = ['Rank', 'Ad Name', 'Spend', 'CPM', 'Outbound CTR', 'LPV', 'ATC', 'Cost/ATC', 'ATC/LPV', 'IC', 'Cost/IC', 'Frequency', 'Purchases', 'Purchases Value', 'ROAS', 'AOV', 'Purchase CVR%', 'Impressions (est.)', 'Clicks (est.)', 'Creative Key'];\n  return pad(toTable(list, cols), 500, cols.length);\n}\nfunction creatives(rows, withClicksColumnU) {\n  const groups = {};\n  for (const r of rows) {\n    const key = r.Creative_Key || '(unknown)';\n    if (!groups[key]) groups[key] = { adIds: new Set(), spend: 0, impressions: 0, clicks: 0, atc: 0, ic: 0, purchases: 0, pv: 0 };\n    const g = groups[key]; if (r.Ad_ID) g.adIds.add(r.Ad_ID);\n    g.spend += num(r.Spend); g.impressions += num(r.Impressions); g.clicks += num(r.Clicks); g.atc += num(r.Adds_to_Cart); g.ic += num(r.Initiate_Checkout); g.purchases += num(r.Purchases); g.pv += num(r.Purchases_Value);\n  }\n  const list = Object.entries(groups).map(([key, g]) => ({\n    'Creative Name': key, Instances: g.adIds.size || 1, Spend: round(g.spend, 2), CPM: round(g.impressions ? (g.spend / g.impressions) * 1000 : 0, 2),\n    'Outbound CTR': round(g.impressions ? (g.clicks / g.impressions) * 100 : 0, 4), ATC: g.atc, IC: g.ic, Purchases: g.purchases,\n    'Purchases Value': round(g.pv, 2), ROAS: round(g.spend ? g.pv / g.spend : 0, 4), AOV: round(g.purchases ? g.pv / g.purchases : 0, 2),\n    Impressions: g.impressions, 'Clicks (est.)': g.clicks,\n  }));\n  list.sort((a, b) => b.Spend - a.Spend);\n  // TikTok master sheet: Clicks (est.) sits in column U, spacer columns N:T\n  const cols = withClicksColumnU\n    ? ['##', 'Creative Name', 'Instances', 'Spend', 'CPM', 'Outbound CTR', 'ATC', 'IC', 'Purchases', 'Purchases Value', 'ROAS', 'AOV', 'Impressions', '', '', '', '', '', '', '', 'Clicks (est.)']\n    : ['##', 'Creative Name', 'Instances', 'Spend', 'CPM', 'Outbound CTR', 'ATC', 'IC', 'Purchases', 'Purchases Value', 'ROAS', 'AOV', 'Impressions'];\n  return pad(toTable(list, cols), 500, cols.length);\n}\nfunction weekly(rows) {\n  const weeks = {};\n  for (const r of rows) {\n    const ws = DateTime.fromISO(r._d).startOf('week');\n    const key = ws.toISODate();\n    if (!weeks[key]) weeks[key] = { start: ws, end: ws.plus({ days: 6 }), spend: 0, purchases: 0, pv: 0 };\n    const w = weeks[key];\n    w.spend += num(r.Spend); w.purchases += num(r.Purchases); w.pv += num(r.Purchases_Value);\n  }\n  const list = Object.values(weeks).map(w => ({\n    Week: w.start.toFormat('MMM d') + '-' + w.end.toFormat(w.start.month === w.end.month ? 'd' : 'MMM d'),\n    Spend: round(w.spend, 2), Purchases: w.purchases, 'Cost Per Purchase': round(w.purchases ? w.spend / w.purchases : 0, 2),\n    'Purchases Value': round(w.pv, 2), ROAS: w.spend ? round(w.pv / w.spend, 4) : '', AOV: round(w.purchases ? w.pv / w.purchases : 0, 2),\n  }));\n  list.sort((a, b) => (b.ROAS === '' ? -1 : b.ROAS) - (a.ROAS === '' ? -1 : a.ROAS));\n  const cols = ['##', 'Week', 'Spend', 'Purchases', 'Cost Per Purchase', 'Purchases Value', 'ROAS', 'AOV'];\n  return pad(toTable(list, cols), 60, cols.length);\n}\n\n// ---------- TIKTOK ----------\nfunction tiktokOverview(rows) {\n  let spend = 0, impressions = 0, reach = 0, atc = 0, ic = 0, purchases = 0, pv = 0, clicks = 0, profileVisits = 0, follows = 0, freqSum = 0, freqN = 0;\n  for (const r of rows) {\n    spend += num(r.Spend); impressions += num(r.Impressions); reach += num(r.Reach); atc += num(r.Adds_to_Cart); ic += num(r.Initiate_Checkout);\n    purchases += num(r.Purchases); pv += num(r.Purchases_Value); clicks += num(r.Clicks); profileVisits += num(r.Profile_Visits); follows += num(r.Follows);\n    if (r.Frequency) { freqSum += num(r.Frequency); freqN++; }\n  }\n  const freq = freqN ? freqSum / freqN : (reach ? impressions / reach : 0);\n  const out = [\n    { Metric: 'Spend', Value: round(spend, 2) }, { Metric: 'CPM', Value: round(impressions ? (spend / impressions) * 1000 : 0, 2) },\n    { Metric: 'CTR', Value: round(impressions ? (clicks / impressions) * 100 : 0, 4) }, { Metric: 'Profile Visits', Value: profileVisits },\n    { Metric: 'Follows', Value: follows }, { Metric: 'Impressions', Value: impressions }, { Metric: 'Reach', Value: reach },\n    { Metric: 'Frequency', Value: round(freq, 2) }, { Metric: 'Adds to cart', Value: atc }, { Metric: 'Initiate Checkout', Value: ic },\n    { Metric: 'Purchases', Value: purchases }, { Metric: 'Cost Per Purchase', Value: round(purchases ? spend / purchases : 0, 2) },\n    { Metric: 'Purchases Value', Value: round(pv, 2) }, { Metric: 'ROAS', Value: round(spend ? pv / spend : 0, 4) },\n    { Metric: 'AOV', Value: round(purchases ? pv / purchases : 0, 2) }, { Metric: 'Purchase CVR%', Value: round(clicks ? (purchases / clicks) * 100 : 0, 4) },\n  ];\n  return pad(out.map(r => [r.Metric, fmtMetric(r.Metric, r.Value)]), 25, 2);\n}\nfunction tiktokAdPerformance(rows) {\n  const groups = {};\n  for (const r of rows) {\n    const key = r.Ad_ID || r.Ad_Name || '(unknown)';\n    if (!groups[key]) groups[key] = { Ad_Name: r.Ad_Name, AdGroup_Name: r.AdGroup_Name, Creative_Key: r.Creative_Key, spend: 0, impressions: 0, clicks: 0, atc: 0, ic: 0, purchases: 0, pv: 0, profileVisits: 0, follows: 0, reachMax: 0 };\n    const g = groups[key];\n    g.spend += num(r.Spend); g.impressions += num(r.Impressions); g.clicks += num(r.Clicks); g.atc += num(r.Adds_to_Cart); g.ic += num(r.Initiate_Checkout);\n    g.purchases += num(r.Purchases); g.pv += num(r.Purchases_Value); g.profileVisits += num(r.Profile_Visits); g.follows += num(r.Follows); g.reachMax = Math.max(g.reachMax, num(r.Reach));\n  }\n  const list = Object.values(groups).map(g => ({\n    'Ad Name': g.Ad_Name, Spend: round(g.spend, 2), CPM: round(g.impressions ? (g.spend / g.impressions) * 1000 : 0, 2),\n    CTR: round(g.impressions ? (g.clicks / g.impressions) * 100 : 0, 4), LPV: '', ATC: g.atc, 'Cost/ATC': round(g.atc ? g.spend / g.atc : 0, 2), 'ATC/LPV': '',\n    'Checkout (IC)': g.ic, 'Cost/Checkout': round(g.ic ? g.spend / g.ic : 0, 2), Frequency: round(g.reachMax ? g.impressions / g.reachMax : 0, 2),\n    Purchases: g.purchases, 'Purchases Value': round(g.pv, 2), ROAS: round(g.spend ? g.pv / g.spend : 0, 4), AOV: round(g.purchases ? g.pv / g.purchases : 0, 2),\n    'Purchase CVR%': round(g.clicks ? (g.purchases / g.clicks) * 100 : 0, 4), Reach: g.reachMax, 'Profile Visits': g.profileVisits, Follows: g.follows,\n    'Impressions (est.)': g.impressions, 'Clicks (est.)': g.clicks, 'Ad Group': g.AdGroup_Name, 'Creative Key': g.Creative_Key,\n  }));\n  list.sort((a, b) => b.Spend - a.Spend);\n  const cols = ['Rank', 'Ad Name', 'Spend', 'CPM', 'CTR', 'LPV', 'ATC', 'Cost/ATC', 'ATC/LPV', 'Checkout (IC)', 'Cost/Checkout', 'Frequency', 'Purchases', 'Purchases Value', 'ROAS', 'AOV', 'Purchase CVR%', 'Reach', 'Profile Visits', 'Follows', 'Impressions (est.)', 'Clicks (est.)', 'Ad Group', 'Creative Key'];\n  return pad(toTable(list, cols), 500, cols.length);\n}\n\n// ---------- COMBINED ----------\nfunction totals(rows) {\n  let spend = 0, purchases = 0, pv = 0;\n  for (const r of rows) { spend += num(r.Spend); purchases += num(r.Purchases); pv += num(r.Purchases_Value); }\n  return { spend, purchases, pv, cpp: purchases ? spend / purchases : 0, roas: spend ? pv / spend : 0, aov: purchases ? pv / purchases : 0 };\n}\nconst m = totals(sets.meta), t = totals(sets.tt);\nconst cs = m.spend + t.spend, cp = m.purchases + t.purchases, cv = m.pv + t.pv;\nconst pct = n => (Number.isFinite(n) ? round(n * 100, 2) + '%' : '');\nconst combinedRows = [\n  { Metric: 'Spend', Meta: round(m.spend, 2), TikTok: round(t.spend, 2), Combined: round(cs, 2) },\n  { Metric: 'Purchases', Meta: m.purchases, TikTok: t.purchases, Combined: cp },\n  { Metric: 'Cost Per Purchase', Meta: round(m.cpp, 2), TikTok: round(t.cpp, 2), Combined: round(cp ? cs / cp : 0, 2) },\n  { Metric: 'Purchases Value', Meta: round(m.pv, 2), TikTok: round(t.pv, 2), Combined: round(cv, 2) },\n  { Metric: 'ROAS', Meta: round(m.roas, 4), TikTok: round(t.roas, 4), Combined: round(cs ? cv / cs : 0, 4) },\n  { Metric: 'AOV', Meta: round(m.aov, 2), TikTok: round(t.aov, 2), Combined: round(cp ? cv / cp : 0, 2) },\n  { Metric: '', Meta: '', TikTok: '', Combined: '' },\n  { Metric: 'Spend Mix', Meta: '', TikTok: '', Combined: '' },\n  { Metric: 'Meta Share of Combined Spend', Meta: pct(cs ? m.spend / cs : NaN), TikTok: '', Combined: '' },\n  { Metric: 'TikTok Share of Combined Spend', Meta: '', TikTok: pct(cs ? t.spend / cs : NaN), Combined: '' },\n];\nfunction fmtCombined(metric, value) {\n  if (value === '' || value == null) return '';\n  if (metric === 'Purchases') return fmtInt(value);\n  if (metric.includes('Share')) return String(value);\n  if (['ROAS', 'AOV', 'Spend', 'Cost Per Purchase', 'Purchases Value'].includes(metric)) return fmtNum(value, 2);\n  return String(value);\n}\nconst combinedValues = pad(combinedRows.map(r => ['Metric', 'Meta', 'TikTok', 'Combined'].map(c => (c === 'Metric' ? r[c] : fmtCombined(r.Metric, r[c])))), 15, 4);\n\n// ---------- sheet payload (ONE batchUpdate per brand; every range is overwritten, so reruns never create duplicates) ----------\nconst L = period.periodLabel;\nconst data = [];\nconst put = (range, values) => data.push({ range, majorDimension: 'ROWS', values });\nput(\"'Meta Overview'!A1:A2\", [[brandName + ' - META ADS REPORT'], ['Period: ' + L]]);\nput(\"'Meta Ad Performance'!A1:B2\", [[brandName + ' - Meta Ad Performance (Ranked)'], ['Ranked by Spend, highest to lowest', L]]);\nput(\"'Meta Creatives Performance'!A1:D2\", [[brandName + ' - Meta Creatives Performance'], ['Same creative combined across all ad sets/campaigns', 'Ranked by total Spend', L, 'live formulas off Meta Ad Performance']]);\nput(\"'Meta Weekly'!A1:B2\", [[brandName + ' - Meta Weekly Performance'], ['Ranked best to worst by ROAS', L]]);\nput(\"'TikTok Overview'!A1:A2\", [[brandName + ' - TikTok Ads Overview'], ['Period: ' + L]]);\nput(\"'TikTok Ad Performance'!A1:C2\", [[brandName + ' - TikTok Ad Performance (Ranked)'], ['Ranked by Spend, highest to lowest', L, 'All ads with spend > 0']]);\nput(\"'TikTok Creatives Performance'!A1:D2\", [[brandName + ' - TikTok Creatives Performance'], ['Same creative combined across all ad groups/campaigns', 'Ranked by total Spend', L, 'live formulas off TikTok Ad Performance']]);\nput(\"'TikTok Weekly'!A1:B2\", [[brandName + ' - TikTok Weekly Performance'], ['Ranked best to worst by ROAS', L]]);\nput(\"'Combined'!A1:C2\", [[brandName + ' - Combined Meta + TikTok Performance'], ['Meta: ' + L, 'TikTok: ' + L, 'EGP']]);\nput(\"'Meta Overview'!A5\", metaOverview(sets.meta));\nput(\"'Meta Ad Performance'!A5\", metaAdPerformance(sets.metaAds));\nput(\"'Meta Creatives Performance'!A5\", creatives(sets.metaAds, false));\nput(\"'Meta Weekly'!A5\", weekly(sets.meta));\nput(\"'TikTok Overview'!A4\", tiktokOverview(sets.tt));\nput(\"'TikTok Ad Performance'!A5\", tiktokAdPerformance(sets.ttAds));\nput(\"'TikTok Creatives Performance'!A4\", creatives(sets.ttAds, true));\nput(\"'TikTok Weekly'!A4\", weekly(sets.tt));\nput(\"'Combined'!A5\", combinedValues);\n\nconst get = k => combinedRows.find(r => r.Metric === k) || {};\nreturn [{ json: {\n  ...base, status: 'ok', reportSheetId,\n  sheetUrl: 'https://docs.google.com/spreadsheets/d/' + reportSheetId + '/edit',\n  counts, warnings,\n  summary: { spend: get('Spend'), purchases: get('Purchases'), purchasesValue: get('Purchases Value'), roas: get('ROAS') },\n  body: { valueInputOption: 'RAW', data },\n} }];"
+      },
+      "name": "Build Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        2256
+      ],
+      "notes": "Parses raw tabs, filters ONLY the period (no fallback), validates, computes all 9 report tabs and builds one batchUpdate body."
+    },
+    {
+      "id": "a5ecce59-0dab-408f-8041-25f2055f0c84",
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "84d449ca-c60b-41a8-abe2-9bea8a970968",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Data OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        2256
+      ]
+    },
+    {
+      "id": "b691d9aa-7a00-42b6-9315-8c858ff13c73",
+      "parameters": {
+        "method": "POST",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.reportSheetId }}/values:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "name": "Write Report Sheets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -432,
+        2160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
+      "notes": "Overwrites fixed ranges (titles + data + blank padding). Re-running never appends or duplicates."
+    },
+    {
+      "id": "a79535fe-f07b-4210-9996-8ffccd119dfe",
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $('Build Report').first().json.reportSheetId }}/permissions?sendNotificationEmail=false&supportsAllDrives=true",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ role: \"writer\", type: \"user\", emailAddress: \"thebreadbutteragency@gmail.com\" }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "Share Report Sheet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -192,
+        2160
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
+      "notes": "Gives thebreadbutteragency@gmail.com Editor access to the brand report sheet after it is filled. Needs a Google Drive OAuth2 credential (full drive scope). Change role to \"reader\" for view-only."
+    },
+    {
+      "id": "8606a5cd-9f2f-4b6a-bf0e-8894ce50b932",
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7e43536d-ea1d-4beb-92c8-6ae8018596c2",
+              "leftValue": "={{ ['weekly','monthly'].includes($('Build Report').first().json.periodType) ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Send email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        48,
+        2160
+      ]
+    },
+    {
+      "id": "7987c151-fb71-46ac-a019-2db9424b0fc0",
+      "parameters": {
+        "jsCode": "// ===================== CONFIG =====================\nconst TEST_MODE = true;                                   // true = every report goes to TEST_RECIPIENT. Set to false to email each brand's Report_Email.\nconst TEST_RECIPIENT = 'thebreadbutteragency@gmail.com';\n// ==================================================\nconst b = $('Build Report').first().json;\nconst brand = $('Loop brands').first().json;\nconst esc = s => String(s == null ? '' : s).replace(/[&<>\"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]));\nconst fmt = v => (v === '' || v == null) ? '-' : Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\nconst s = b.summary;\nconst clientEmail = String(brand.Report_Email || '').trim();\nlet toEmail = TEST_MODE ? TEST_RECIPIENT : (clientEmail || TEST_RECIPIENT);\nlet subject = b.brandName + ' Ads Report - ' + b.periodLabel;\nif (TEST_MODE) subject = '[TEST] ' + subject;\nelse if (!clientEmail) subject = '[NO CLIENT EMAIL IN REGISTRY] ' + subject;\nconst row = (label, a, c, d) => '<tr><td style=\"padding:6px 12px;border:1px solid #ddd\">' + label + '</td><td style=\"padding:6px 12px;border:1px solid #ddd;text-align:right\">' + fmt(a) + '</td><td style=\"padding:6px 12px;border:1px solid #ddd;text-align:right\">' + fmt(c) + '</td><td style=\"padding:6px 12px;border:1px solid #ddd;text-align:right\"><b>' + fmt(d) + '</b></td></tr>';\nconst html = '<div style=\"font-family:Arial,sans-serif;font-size:14px;color:#222\">'\n  + '<h2 style=\"margin:0 0 4px\">' + esc(b.brandName) + ' - Ads Report</h2>'\n  + '<p style=\"margin:0 0 16px;color:#666\">' + esc(b.periodLabel) + '</p>'\n  + '<table style=\"border-collapse:collapse\"><tr style=\"background:#f3f3f3\"><th style=\"padding:6px 12px;border:1px solid #ddd;text-align:left\">Metric</th><th style=\"padding:6px 12px;border:1px solid #ddd\">Meta</th><th style=\"padding:6px 12px;border:1px solid #ddd\">TikTok</th><th style=\"padding:6px 12px;border:1px solid #ddd\">Combined</th></tr>'\n  + row('Spend (EGP)', s.spend.Meta, s.spend.TikTok, s.spend.Combined)\n  + row('Purchases', s.purchases.Meta, s.purchases.TikTok, s.purchases.Combined)\n  + row('Purchases Value', s.purchasesValue.Meta, s.purchasesValue.TikTok, s.purchasesValue.Combined)\n  + row('ROAS', s.roas.Meta, s.roas.TikTok, s.roas.Combined)\n  + '</table>'\n  + '<p style=\"margin-top:16px\"><a href=\"' + esc(b.sheetUrl) + '\">Open the full report</a></p></div>';\nreturn [{ json: { subject, html, toEmail } }];"
+      },
+      "name": "Compose brand email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48,
+        2064
+      ],
+      "notes": "TEST_MODE = true sends to the agency address only. Set false to email each brand."
+    },
+    {
+      "id": "563b7ed9-efd8-4b33-a9d3-dd84194625e3",
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "={{ $json.toEmail }}",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Send report email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        288,
+        2064
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "d51af577-d876-4a5b-b334-142dbb5fb2d2",
+      "parameters": {
+        "jsCode": "const brand = $('Loop brands').first().json;\nconst period = $('Set Period').first().json;\nconst j = $json || {};\nlet kind, detail;\nif (j.status === 'no_data') { kind = 'No raw data'; detail = j.reason; }\nelse if (j.status === 'failed') { kind = 'Report build failed'; detail = j.reason; }\nelse { kind = 'Sheet write, sharing or email failed'; detail = JSON.stringify(j.error || j).slice(0, 600); }\nconst name = brand.Brand_Name || '(unknown brand)';\nreturn [{ json: {\n  subject: '[Ads Reports] ' + kind + ' - ' + name + ' - ' + period.periodLabel,\n  message: 'Brand: ' + name + '\\nPeriod: ' + period.periodLabel + ' (' + period.periodStart + ' to ' + period.periodEnd + ')\\nProblem: ' + kind + '\\nDetail: ' + detail + '\\n\\nThe brand report sheet was NOT overwritten with bad data (for write failures, check the sheet manually). Other brands continue.\\nExecution: ' + $execution.id,\n} }];"
+      },
+      "name": "Format Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        2400
+      ]
+    },
+    {
+      "id": "2853ef5c-8887-4615-890c-7282d8ab4a34",
+      "parameters": {
+        "sendTo": "sahersalama97@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Send Alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        2400
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zzQuQyhvHs6xuSu1",
+          "name": "n8n Gmail TikTok Reports"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "04589083-08ee-47ba-b26d-b49b0f1929ef",
+      "parameters": {},
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1936,
+        1552
+      ]
+    },
+    {
+      "id": "454120c3-3079-4505-98f0-05e89f750906",
+      "parameters": {
+        "sendTo": "sahersalama97@gmail.com",
+        "subject": "Error In WF3 GENERATE WEEKLY MONTHLY REPORTS",
+        "emailType": "text",
+        "message": "=Workflow: {{ $json.workflow.name }}\nFailed node: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.url }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Send error alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -1712,
+        1552
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zzQuQyhvHs6xuSu1",
+          "name": "n8n Gmail TikTok Reports"
+        }
+      }
+    },
+    {
+      "id": "82420464-c341-44d9-b597-c6f3f35f37b7",
+      "parameters": {
+        "content": "## WF3 Ads Reports (fixed)\n- Raw sheets = source of truth, read fresh every run\n- Daily 13:00 -> 1st of month through yesterday (e.g. 1-4 Oct), sheets only\n- Monthly 14:00 on the 1st -> previous full month, sheets + email\n- Email TEST_MODE is ON in \"Compose brand email\"\n- Workflow timezone must be Africa/Cairo (Settings)",
+        "height": 200,
+        "width": 380
+      },
+      "name": "Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2400,
+        1500
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Compute Period (Month-to-Date)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "Compute Period (Month-to-Date)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Trigger": {
+      "main": [
+        [
+          {
+            "node": "Compute Period (Last Full Week)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monthly Trigger": {
+      "main": [
+        [
+          {
+            "node": "Compute Period (Previous Full Month)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Period (Month-to-Date)": {
+      "main": [
+        [
+          {
+            "node": "Set Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Period (Last Full Week)": {
+      "main": [
+        [
+          {
+            "node": "Set Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Period (Previous Full Month)": {
+      "main": [
+        [
+          {
+            "node": "Set Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Period": {
+      "main": [
+        [
+          {
+            "node": "Read Brand Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Brand Registry": {
+      "main": [
+        [
+          {
+            "node": "Filter brands ready for reporting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter brands ready for reporting": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop brands": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Read Raw Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Raw Sheets": {
+      "main": [
+        [
+          {
+            "node": "Build Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Report": {
+      "main": [
+        [
+          {
+            "node": "Data OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data OK?": {
+      "main": [
+        [
+          {
+            "node": "Write Report Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Report Sheets": {
+      "main": [
+        [
+          {
+            "node": "Share Report Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share Report Sheet": {
+      "main": [
+        [
+          {
+            "node": "Send email?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email?": {
+      "main": [
+        [
+          {
+            "node": "Compose brand email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose brand email": {
+      "main": [
+        [
+          {
+            "node": "Send report email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send report email": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Alert": {
+      "main": [
+        [
+          {
+            "node": "Send Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Alert": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Cairo"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

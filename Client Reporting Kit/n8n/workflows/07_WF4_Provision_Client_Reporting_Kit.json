@@ -1,0 +1,585 @@
+{
+  "name": "WF4 Provision Client Reporting Kit",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "name": "Manual Test",
+      "position": [
+        -1900,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 10 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "name": "Daily 10:30",
+      "position": [
+        -1900,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "name": "Read Brand Registry",
+      "position": [
+        -1660,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Only brands that are active, already have a Raw sheet to read from, and do\n// not yet have a dashboard. Re-running is therefore safe: it creates the\n// missing ones and leaves existing dashboards -- and any edits a human made to\n// their Benchmarks or business inputs -- completely alone.\nreturn items.filter(i => {\n  const j = i.json || {};\n  return (j.Status || '').toLowerCase() === 'active' && j.Raw_Sheet_ID && !j.Kit_Sheet_ID;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "name": "Filter brands needing a kit",
+      "position": [
+        -1420,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "name": "Loop brands",
+      "position": [
+        -1180,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1LT44dvW6b3iuhvUDA9k_zUuRlz4KUXTqxDXinq4dP9s"
+        },
+        "name": "={{ $json.Brand_Name }} - Reporting Dashboard (LIVE)",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "name": "Copy kit template",
+      "position": [
+        -940,
+        400
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5KJlnp3mTAKGBAdb",
+          "name": "Ai Saher Google Drive"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1ytFhXwRpANDR5HB1NnKFcmeQspVZ-Ves3h03dsFq4xU"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Brand_Name": "={{ $('Loop brands').item.json.Brand_Name }}",
+            "Kit_Sheet_ID": "={{ $json.id }}",
+            "row_number": 0
+          },
+          "matchingColumns": [
+            "Brand_Name"
+          ],
+          "schema": [
+            {
+              "id": "Brand_Name",
+              "displayName": "Brand_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Meta_Ad_Account_ID",
+              "displayName": "Meta_Ad_Account_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "TikTok_Advertiser_ID",
+              "displayName": "TikTok_Advertiser_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Report_Email",
+              "displayName": "Report_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Raw_Sheet_ID",
+              "displayName": "Raw_Sheet_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Current_Month_Report_Sheet_ID",
+              "displayName": "Current_Month_Report_Sheet_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Kit_Sheet_ID",
+              "displayName": "Kit_Sheet_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Discovered_At",
+              "displayName": "Discovered_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "name": "Save Kit_Sheet_ID",
+      "position": [
+        -700,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SBl4DBB9PIqzy5w0",
+          "name": "Ai Saher Google Sheets"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "email",
+              "leftValue": "={{ $('Loop brands').item.json.Report_Email }}",
+              "operator": {
+                "operation": "notContains",
+                "singleValue": false,
+                "type": "string"
+              },
+              "rightValue": "PASTE_YOUR_EMAIL"
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "name": "Has a real report email?",
+      "position": [
+        -460,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Copy kit template').item.json.id }}"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "writer",
+            "type": "user",
+            "emailAddress": "={{ $('Loop brands').item.json.Report_Email }}"
+          }
+        },
+        "options": {
+          "sendNotificationEmail": true
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "name": "Share kit with brand",
+      "position": [
+        -220,
+        300
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "5KJlnp3mTAKGBAdb",
+          "name": "Ai Saher Google Drive"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "sahersalama97@gmail.com",
+        "subject": "=Kit provisioning: copy failed - {{ $('Loop brands').item.json.Brand_Name }}",
+        "options": {
+          "appendAttribution": false
+        },
+        "text": "=Copying the dashboard template did not work, so no Kit_Sheet_ID was saved.\n\nBrand: {{ $('Loop brands').item.json.Brand_Name }}\nTemplate ID: 1LT44dvW6b3iuhvUDA9k_zUuRlz4KUXTqxDXinq4dP9s\nError: {{ $json.error ? JSON.stringify($json.error) : ($json.message || 'see the n8n execution log') }}\n\nUsual cause: the template was moved, renamed or trashed. The ID above must point at 'TEMPLATE - Client Reporting Dashboard (Meta + TikTok)'."
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "name": "Email copy failure",
+      "position": [
+        -700,
+        660
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "fromEmail": "sahersalama97@gmail.com",
+        "toEmail": "sahersalama97@gmail.com",
+        "subject": "=Kit provisioning: registry not updated - {{ $('Loop brands').item.json.Brand_Name }}",
+        "options": {
+          "appendAttribution": false
+        },
+        "text": "=The dashboard was copied but Kit_Sheet_ID could not be written back to the registry.\n\nBrand: {{ $('Loop brands').item.json.Brand_Name }}\nNew sheet ID: {{ $('Copy kit template').item.json.id }}\n\nPaste that ID into the Kit_Sheet_ID column yourself, otherwise this workflow will create a second dashboard for the same brand on its next run. The column must exist and be spelled exactly Kit_Sheet_ID."
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "name": "Email registry failure",
+      "position": [
+        -460,
+        660
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "cEBcWP6Pk9IcmcvL",
+          "name": "Report Email SMTP"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "name": "Error Trigger",
+      "position": [
+        -1900,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "sahersalama97@gmail.com",
+        "subject": "Error in WF4 PROVISION CLIENT REPORTING KIT",
+        "message": "=Workflow: {{ $json.workflow.name }}\nFailed node: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.url }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "name": "Send a message",
+      "position": [
+        -1660,
+        40
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zzQuQyhvHs6xuSu1",
+          "name": "n8n Gmail TikTok Reports"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Read Brand Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 10:30": {
+      "main": [
+        [
+          {
+            "node": "Read Brand Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Brand Registry": {
+      "main": [
+        [
+          {
+            "node": "Filter brands needing a kit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter brands needing a kit": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop brands": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Copy kit template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy kit template": {
+      "main": [
+        [
+          {
+            "node": "Save Kit_Sheet_ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email copy failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Kit_Sheet_ID": {
+      "main": [
+        [
+          {
+            "node": "Has a real report email?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email registry failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has a real report email?": {
+      "main": [
+        [
+          {
+            "node": "Share kit with brand",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share kit with brand": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email copy failure": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email registry failure": {
+      "main": [
+        [
+          {
+            "node": "Loop brands",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
