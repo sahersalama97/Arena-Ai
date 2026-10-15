@@ -4,7 +4,7 @@ Found while building the Client Reporting Kit on top of the pipeline, 15 Oct 202
 This is **not** a kit bug — the kit works around it — but it corrupts the source
 data every scheduled run, so it is worth 20 minutes to fix.
 
-Everything below was measured against the live GOFRESH raw sheet
+Everything below was measured against a live client raw sheet
 (`14nlX_slJeGVJX7jV2SMqnqdUHDSV5InMuZYBLMWy-2I`, tab `Daily_Raw_TikTok_Ads`,
 135 data rows at the time of writing).
 
@@ -150,7 +150,7 @@ WF2e's loop node for the ads branch. Both use credential
 ### Verified
 
 The Code node was executed under Node v22 against a `batchGet` payload built from
-the real GOFRESH sheet, in two scenarios:
+the real client sheet, in two scenarios:
 
 | scenario | result |
 |---|---|
@@ -206,12 +206,12 @@ XLS/XLSX fallbacks — worth confirming the scheduled report is configured to se
 
 **None — the kit is already immune.** WF5's flatten step (`code_flatten_to_kit_shape.js`)
 deduplicates ad-days by newest `Pulled_At` before it writes `Fundamentals` and
-`Ad Data`, which is why the delivered GOFRESH LIVE workbook shows 387 ad rows
+`Ad Data`, which is why the delivered client workbook shows 387 ad rows
 rather than 400.
 
 Two consequences worth knowing:
 
-- **Health Check rows 23–24 read `CHECK` for GOFRESH** (7.38% / 11.84% against
+- **Health Check rows 23–24 read `CHECK` for that account** (7.38% / 11.84% against
   tolerances of 5% / 8%). That is a *separate* issue — TikTok's ad-level export is
   missing spend (11,658.83 vs 14,142.87 account-level for 8–14 Oct, 17.6% short;
   25.8% short on revenue, 30.1% on purchases). Fixing the duplicates does not close

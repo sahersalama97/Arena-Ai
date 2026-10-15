@@ -175,7 +175,7 @@ click→landing-page rate real. Without it the metric reads 0.0% and looks broke
 
 **Duplicate ad-days are removed, keeping the newest pull.** The Meta ad-level
 sync upserts on `(Date, Ad_ID)`; the TikTok CSV import appends instead, so the
-same ad-day arrives once per sync run. On GOFRESH that was 13 duplicate rows.
+same ad-day arrives once per sync run. On one live account that was 13 duplicate rows.
 They are not identical — TikTok restates reach and conversions as attribution
 matures — and in the raw sheet the *newer* row usually comes first, so
 "last row wins" would keep the stale copy. The node ranks on `Pulled_At`
@@ -236,7 +236,7 @@ with the next brand rather than stopping.
 
 ---
 
-## What this found on GOFRESH
+## What this found on a live account
 
 Running the flatten logic against the live raw sheet surfaced two problems that
 are in the pipeline, not in the kit. Both are worth fixing upstream, because WF3
@@ -257,7 +257,7 @@ gap was 17.6%. The worst days are 12 Oct (1,454 EGP missing) and 13 Oct (1,173),
 while 14 Oct is complete, which points at the scheduled TikTok report itself
 dropping rows rather than at attribution lag.
 
-Consequence: `Health Check` rows 23 and 24 now read **CHECK** for GOFRESH. That
+Consequence: `Health Check` rows 23 and 24 now read **CHECK** for that account. That
 is the check working — before de-duplication the duplicate rows were padding the
 ad-level totals and hiding it. The practical rule it implies: **quote TikTok
 totals from `Fundamentals` (account level), never from `Ad Performance`.** The

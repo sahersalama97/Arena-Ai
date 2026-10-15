@@ -126,7 +126,7 @@ TikTok rows stay blank either way; the TikTok Dashboard says so in words instead
 **Benchmarks** — the thresholds that decide every status. Placeholders ship so it works on day one; replace them with your own trailing 90 days.
 **Health Check** — proves ad-level data reconciles to account-level data, and flags impossible numbers. Run it before every client conversation.
 
-**Why three dashboards instead of one.** Blended numbers let a weak channel hide behind a strong one. On GOFRESH, 8–14 Oct against 1–7 Oct, the blended read is "ROAS fell 21%". Split apart it is two unrelated problems: TikTok's frequency hit 4.10 with click-to-purchase at 1.65%, while Meta sat at 1.46 frequency and 5.23% click-to-purchase. One says *refresh creative and cap frequency*; the other says *leave it alone*. A single blended dashboard cannot tell you that.
+**Why three dashboards instead of one.** Blended numbers let a weak channel hide behind a strong one. On one live client account, 8–14 Oct against 1–7 Oct, the blended read is "ROAS fell 21%". Split apart it is two unrelated problems: TikTok's frequency hit 4.10 with click-to-purchase at 1.65%, while Meta sat at 1.46 frequency and 5.23% click-to-purchase. One says *refresh creative and cap frequency*; the other says *leave it alone*. A single blended dashboard cannot tell you that.
 
 ### Client Report (`02_…`) — 11 tabs
 **`_Inputs`** — internal. All numbers live here; every other tab reads from it.
