@@ -43,7 +43,7 @@ Section 5 writes five plain-English sentences from your numbers, including which
 Open `01_Google_Sheets_Reporting_Dashboard.xlsx` → **Fundamentals** and **Ad Data** tabs. Paste your exports. Sample data is included; delete it. Column order matters — don't reorder columns. If you run the n8n pipeline, the **Start Here** tab has a one-formula link that pulls straight from your Raw Data sheet so you never paste again.
 
 **4 · Run the month**
-Open `02_Client_Report_Template.xlsx` → `_Inputs` tab. Fill the cover block, paste your platform overviews, and fill the six CONTEXT lines. Then open `05_AI_Prompts...md` and run **Prompt 1** (the monthly narrative) on the whole thing. Paste the output into row 56–60 of `_Inputs`.
+Open `02_Client_Report_Template.xlsx` → `_Inputs` tab. Fill the cover block, paste your platform overviews, and fill the six CONTEXT lines. Then open `05_AI_Prompts_Campaign_Performance.md` and run **Prompt 1** (the monthly narrative) on the whole thing. Paste the output into row 56–60 of `_Inputs`.
 
 **5 · Ship it**
 Export the report template as PDF, or use `04_Monthly_Report_PDF_Template.pdf` as the designed shell. Delete the `_Inputs` tab before sending — it holds your internal notes.
@@ -174,4 +174,36 @@ Use it to understand how the kit behaves, then delete it.
 
 ## Licence and reuse
 
-Kit contents: use them with your clients, edit them, white-label them, sell your reporting service with them. The Inter typeface is included under the SIL Open Font License — see `_build/fonts/`.
+**Using it to deliver work: wide open.** Use the kit with as many of your own clients as you
+like, edit anything, white-label the output, charge whatever you want for your reporting
+service, and share it with your own staff and contractors. No limit and no extra fee.
+
+**Reselling the files themselves: not without an agency licence.** You may not redistribute
+the templates, put them in a course or marketplace, publish them as a free download, or sell
+the kit to other media buyers. The line is: delivering reporting *to your clients* is
+unlimited; selling the tool *to people who deliver reporting* needs a separate licence.
+
+Full terms — warranty, liability, support windows, refunds, data protection, termination —
+are in **[`LICENCE.md`](LICENCE.md)**. If you're unsure which side of the line your use falls
+on, ask before assuming.
+
+The Inter typeface is included under the SIL Open Font License — see `_build/fonts/`.
+
+---
+
+## Selling this system
+
+If you want to offer this to other media buyers and agencies rather than just use it
+yourself, these are the working documents:
+
+| File | What it is |
+|---|---|
+| `06_Sell_This_System.md` | Positioning, three-tier offer, pricing and how to price across markets, an honest readiness table of what is and isn't safe to promise, the demo script, channels, objections, support burden, launch sequence |
+| `07_Sales_One_Pager.md` | The one page you send. Real numbers from a live account |
+| `08_Proposal_and_Order_Form.md` | For done-for-you and agency sales: scope, deliverables, timeline, exclusions, disclosed limitations, data protection, warranty, acceptance test |
+| `09_Delivery_Runbook.md` | What to do after a sale, per tier — including the eight constants a buyer must replace, the install order, the schedule map, the intake form, and a breakage table |
+
+Start with `06` §2. It lists what is genuinely verified versus what is built but never run
+end to end, and selling against it is the difference between a product with refunds and one
+without.
+
