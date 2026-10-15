@@ -11,10 +11,10 @@ Built to pair with the **Automated Ads Reporting System** already in this repo (
 | File | What it is | Open it when |
 |------|-----------|--------------|
 | `01_Google_Sheets_Reporting_Dashboard.xlsx` | Live dashboard. Set two dates, everything recalculates. | Every day |
-| `02_Client_Report_Template.xlsx` | The client-facing report. Ten tabs, mirroring the pipeline's report sheets. | Once a month |
+| `02_Client_Report_Template.xlsx` | The client-facing report. Eleven tabs, mirroring the pipeline's report sheets. | Once a month |
 | `03_KPI_Calculator.xlsx` | The math engine: breakeven ROAS, contribution margin, POAS, driver decomposition. | Every month, before you report |
 | `04_Monthly_Report_PDF_Template.pdf` | Five-page designed PDF report. Blank, print-ready. | Once a month |
-| `05_AI_Prompts_Campaign_Performance.md` | Eleven prompts for turning numbers into language. | Every week and month |
+| `05_AI_Prompts_Campaign_Performance.md` | Twelve prompts for turning numbers into language, each grounded in a specific tab. | Every week and month |
 | `samples/Sample_Monthly_Report.pdf` | A filled-in example of the PDF, so you can see the finished thing. | First, to see what you're aiming at |
 
 ---
@@ -64,6 +64,8 @@ The n8n system in `Automated Ads Reporting System_files/` writes to predictable 
 | `Combined` | Report → `_Inputs` block 1 | Spend, Purchases, Cost Per Purchase, Purchases Value, ROAS, AOV |
 | `Meta/TikTok Ad Performance`, `… Creatives Performance`, `… Weekly` | Report → `Top Ads`, `Creatives`, `Weekly Trend` | Top 10 by spend, same ranking |
 
+
+**Data-integrity note for the TikTok raw tab.** While building WF5 we found that `Daily_Raw_TikTok_Ads` accumulates duplicate `(Date, Ad_ID)` rows and stores two Ad_IDs as 16-digit *numbers*, which Google Sheets silently rounds to 15 significant digits — the last digit is destroyed and those rows can never be matched again. The kit deduplicates on read, so nothing here is wrong, but the raw sheet is. Full diagnosis, a tested three-node patch for WF2e, and a one-off cleanup procedure: **[`n8n/WF2e_FIX_TikTok_Raw_Integrity.md`](n8n/WF2e_FIX_TikTok_Raw_Integrity.md)**.
 **Fully automated — two n8n workflows.** If you run the pipeline, you don't paste anything and you don't maintain a link formula either. See **[`n8n/AUTOMATION_GUIDE.md`](n8n/AUTOMATION_GUIDE.md)**. WF4 copies a dashboard per client; WF5 reads the four raw tabs and fills it every night at 14:00, choosing the reporting window from the data. Three Sheets API calls per brand.
 
 **Manual alternative — one formula.** On the Dashboard's **Start Here** tab there's a `LET` / `VSTACK` / `HSTACK` / `CHOOSECOLS` formula. Put your Raw Data sheet ID in `Fundamentals!N1`, paste that one formula into `Fundamentals!A2`, and the dashboard fills itself from the pipeline — Meta and TikTok both, labels included. Approve the IMPORTRANGE prompt once.

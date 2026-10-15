@@ -1,6 +1,6 @@
 # AI Prompts — Explaining Campaign Performance
 
-Eleven prompts for turning ad platform data into language a client will read, understand and act on.
+Twelve prompts for turning ad platform data into language a client will read, understand and act on.
 
 **Read this first.** These prompts do not make the analysis for you — they make the *writing* faster. You still need to know your numbers and what you did this month. An AI handed a table of metrics will confidently invent a reason for every movement. These prompts are built to stop that: they include explicit grounding rules, a ban on explaining causes that aren't in the data, and a required "what I can't tell from this data" line.
 
@@ -26,6 +26,7 @@ Two ground rules that apply to every prompt in this file:
 | 9 | [Turning my notes into the client email](#9-turning-my-notes-into-the-client-email) | You know what happened, you just don't want to write it |
 | 10 | [The client-complaint response](#10-the-client-complaint-response) | "Why is my ROAS down?" email arrives at 9pm |
 | 11 | [The self-audit](#11-the-self-audit) | Monthly. Review your own account before the client does |
+| 12 | [The platform split decision](#12-the-platform-split-decision) | You run two platforms and need to say which earns the next dollar |
 
 Every prompt uses the same input block. Fill it once and reuse it.
 
@@ -68,8 +69,34 @@ Contribution margin %: [value]
 What we changed this month: [list the actual changes you made]
 Known external factors:     [stockouts, price changes, shipping delays, competitor activity — or "none reported"]
 
+DATA INTEGRITY (do not skip this section — see the notes below)
+Platform totals taken from:            [account-level tabs / dashboard — NOT ad-level]
+Ad-level spend reconciles to account:  Meta [x.x%]  TikTok [x.x%]
+Known gaps or anomalies in the data:   [duplicate ad-day rows, days with near-zero delivery,
+                                        missing metric on one platform — or "none found"]
+Assumed rather than confirmed inputs:  [COGS %, other costs %, shipping cost — or "none"]
+
 === END INPUT DATA ===
 ```
+
+**Where to read each field from.** The dashboard has one tab per platform, so there is no ambiguity about which number belongs to whom:
+
+| Input block section | Read it from |
+|---|---|
+| `PLATFORM TOTALS` → Meta row | **Meta Dashboard** (cards, rows 5 and 9) |
+| `PLATFORM TOTALS` → TikTok row | **TikTok Dashboard** (cards, rows 5 and 9) |
+| `PLATFORM TOTALS` → Combined row | **Combined** tab in the client report, rows 7–20 |
+| `ACCOUNT DERIVED` | Each platform's own dashboard, efficiency block rows 14–22. Combined CPM/CTR/frequency come from the **Combined** tab — they are recomputed from combined totals, never summed |
+| `FUNNEL` | The platform dashboard's funnel block, rows 25–31; combined funnel on the **Combined** tab, rows 24–28 |
+| Period dates | `_Control` rows 2–5 (single source of truth — don't retype them) |
+| Breakeven ROAS, margin % | `KPI Calc` rows 5–7 feed the calculation. **If `KPI Calc!I4` is red, the costs are assumed** — say so in `DATA INTEGRITY` |
+| Ad names for prompt 6 | **Ad Performance** (live-ranked top 25 on the selected window) |
+
+Three integrity rules that follow from the tab layout:
+
+1. **Never average the two platform dashboards.** A blended ROAS that treats Meta and TikTok as one number hides the fact that they are usually two unrelated problems. Report each platform, then the combined figure from the Combined tab, and let the gap be the story.
+2. **Quote platform totals from the dashboards, not from Ad Performance.** Ad-level exports can be incomplete — the Ad Performance tab is reliable for *ranking* ads against each other, not for *total* platform spend.
+3. **Check the Health Check tab before writing.** Rows 23–24 compare ad-level against account-level totals; if they read `CHECK`, the gap is real and belongs in `DATA INTEGRITY`, not in a client-facing narrative about performance.
 
 ---
 
@@ -392,6 +419,57 @@ Rules:
 - If something genuinely looks fine, say so briefly rather than manufacturing a problem.
 - Do not compliment the report.
 ```
+
+---
+
+## 12. The platform split decision
+
+**When:** you run two platforms and the client asks the question you can't dodge — "which one should get the next dollar?" Read the **Combined** tab into this one, rows 32–34 especially: it puts share of spend next to share of revenue, which is the whole argument in two columns.
+
+````
+Act as a media buying lead deciding how to split next month's budget across two platforms.
+
+Using the INPUT DATA, produce:
+
+1. THE SPLIT VERDICT — one table:
+   | Platform | Share of spend | Share of revenue | ROAS | Cost per purchase | Verdict |
+   Fill share columns from the Combined tab (rows 32-33). Verdict is one of:
+   SCALE / HOLD / FIX FIRST / CUT. Justify each in one line.
+
+2. THE ASYMMETRY — in two or three sentences, say what the split is hiding.
+   A blended ROAS that looks healthy can be one strong platform carrying one weak one.
+   Name which is which and by how much.
+
+3. WHY THE PLATFORMS DIFFER — only from the data. Typical drivers, check each one
+   against the input before naming it: audience maturity, frequency, creative format,
+   funnel depth, price point of what converts, attribution lag.
+   If you cannot support a driver with a number from the INPUT DATA, do not mention it.
+
+4. THE ALLOCATION — propose next month's split as a percentage of the same total budget.
+   State the expected effect on combined ROAS and show the arithmetic.
+   Include a "do not move budget" option if the data does not support moving it.
+
+5. WHAT WOULD CHANGE MY MIND — the two or three data points that would reverse this
+   recommendation, and roughly how long it takes to get them.
+
+6. THE CLIENT VERSION — three sentences, no jargon, no metric names, that I can paste
+   into an email. It must say what we are doing and why in business terms.
+
+Rules:
+- Two platforms with different frequencies, funnels and creative formats are not
+  comparable on ROAS alone. Compare on cost per purchase and on share of revenue vs
+  share of spend. Say explicitly when ROAS is the wrong lens.
+- Do not recommend moving budget on fewer than 30 conversions on the weaker platform.
+  If either platform is below that, say the sample is too small and recommend what to
+  run instead.
+- Frequency above roughly 4 on a prospecting audience usually means creative fatigue,
+  not a budget problem. Do not solve a fatigue problem with a reallocation.
+- Attribution lag makes the more recent days of the shorter-window platform look worse
+  than they are. If the DATA INTEGRITY section flags near-zero delivery days or a lag,
+  exclude those days from the comparison and say you did.
+- Every figure must come from the INPUT DATA. No benchmarks from outside it.
+- End with a line starting "What I can't tell from this data:" and be honest in it.
+````
 
 ---
 
