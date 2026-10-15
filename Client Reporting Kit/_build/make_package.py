@@ -36,6 +36,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -172,6 +173,13 @@ manifest are relative to the package root, which is where you will be standing:
 
 Every line should say `OK`. The two manifest files are not listed in
 themselves, because a file cannot contain its own hash.
+
+This archive is a deterministic build: entry timestamps are fixed, so
+rebuilding from the same files produces a bit-identical ZIP and the same
+SHA-256. If someone sends you a copy, the hashes should match exactly. To
+rebuild it yourself from the git repository:
+
+    python3 "Client Reporting Kit/_build/make_package.py"
 
 ## Not in this package
 
@@ -319,6 +327,15 @@ def main():
             fh.write(f"{digest}  {rel.replace(os.sep, '/')}\n")
 
     # --- zip -----------------------------------------------------------
+    # Deterministic build. A plain z.write() stamps each entry with the file's
+    # mtime, and git resets mtimes to checkout time - so two rebuilds of
+    # identical content produce different archives and different SHA-256s, and
+    # "verify your download against this hash" becomes meaningless. Fixing the
+    # timestamps makes the whole archive reproducible bit for bit. Honours
+    # SOURCE_DATE_EPOCH, the usual convention for this.
+    epoch = os.environ.get("SOURCE_DATE_EPOCH")
+    stamp = time.gmtime(int(epoch))[:6] if epoch else (2026, 1, 1, 0, 0, 0)
+
     if os.path.exists(OUT_ZIP):
         os.remove(OUT_ZIP)
     with zipfile.ZipFile(OUT_ZIP, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
@@ -326,7 +343,12 @@ def main():
             dirnames.sort()
             for fn in sorted(filenames):
                 full = os.path.join(dirpath, fn)
-                z.write(full, os.path.relpath(full, stage))
+                arc = os.path.relpath(full, stage).replace(os.sep, "/")
+                zi = zipfile.ZipInfo(arc, date_time=stamp)
+                zi.compress_type = zipfile.ZIP_DEFLATED
+                zi.external_attr = 0o644 << 16
+                with open(full, "rb") as fh:
+                    z.writestr(zi, fh.read())
 
     # --- verify --------------------------------------------------------
     problems = []
